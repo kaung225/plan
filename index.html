@@ -5,20 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
     <title>强韧计划 · 极简周计划+待办</title>
     <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         :root {
             --bg-body: radial-gradient(circle at 20% 30%, #0a0f1e, #03060c);
             --bg-container: rgba(12, 20, 35, 0.75);
             --border-glow: rgba(0, 255, 255, 0.35);
             --text: #ffffff;
             --text-secondary: #2DD4BF;
-            --card-bg: rgba(0, 0, 0, 0.6);
-            --table-bg: rgba(0, 0, 0, 0.25);
+            --card-bg: rgba(0,0,0,0.6);
+            --table-bg: rgba(0,0,0,0.25);
             --th-bg: #0f172ad9;
-            --td-bg: rgba(10, 20, 35, 0.7);
-            --btn-bg: rgba(20, 30, 45, 0.85);
+            --td-bg: rgba(10,20,35,0.7);
+            --btn-bg: rgba(20,30,45,0.85);
             --btn-border: #2DD4BF;
             --highlight-bg: #2DD4BF;
-            --modal-bg: rgba(0, 0, 0, 0.92);
+            --modal-bg: rgba(0,0,0,0.92);
             --banner-bg: linear-gradient(135deg, #2DD4BF, #0f766e);
         }
         body {
@@ -27,6 +28,7 @@
             background: var(--bg-body); color: var(--text);
             transition: background 0.3s, color 0.3s;
         }
+        /* 主题定义 */
         body.theme-dark { /* 默认深空 */ }
         body.theme-aurora {
             --bg-body: linear-gradient(145deg, #0b2f3c, #021017);
@@ -52,11 +54,37 @@
             --highlight-bg: #9e9e9e; --modal-bg: rgba(255,255,255,0.95);
             --banner-bg: linear-gradient(135deg, #757575, #424242);
         }
+        body.theme-sakura {
+            --bg-body: linear-gradient(145deg, #fce4ec, #f8bbd0);
+            --bg-container: rgba(255,240,245,0.85); --border-glow: #f06292;
+            --text: #4a1525; --text-secondary: #c2185b; --card-bg: #fff0f5;
+            --table-bg: rgba(255,235,240,0.7); --th-bg: #f8bbd0; --td-bg: #fff0f5;
+            --btn-bg: #f8bbd0; --btn-border: #f06292; --highlight-bg: #f06292;
+            --modal-bg: rgba(255,240,245,0.95); --banner-bg: linear-gradient(135deg, #f48fb1, #ec407a);
+        }
+        body.theme-ink {
+            --bg-body: #121212; --bg-container: rgba(30,30,30,0.9);
+            --border-glow: #757575; --text: #e0e0e0; --text-secondary: #bdbdbd;
+            --card-bg: #1e1e1e; --table-bg: rgba(40,40,40,0.6); --th-bg: #2c2c2c;
+            --td-bg: #1e1e1e; --btn-bg: #2c2c2c; --btn-border: #757575;
+            --highlight-bg: #757575; --modal-bg: rgba(18,18,18,0.95);
+            --banner-bg: linear-gradient(135deg, #9e9e9e, #616161);
+        }
+        body.theme-mint {
+            --bg-body: linear-gradient(145deg, #e0f7fa, #b2dfdb);
+            --bg-container: rgba(240,255,250,0.85); --border-glow: #4db6ac;
+            --text: #1e3a3a; --text-secondary: #00796b; --card-bg: #ffffff;
+            --table-bg: rgba(245,255,250,0.7); --th-bg: #b2dfdb; --td-bg: #f0fdfa;
+            --btn-bg: #b2dfdb; --btn-border: #4db6ac; --highlight-bg: #4db6ac;
+            --modal-bg: rgba(240,255,250,0.95); --banner-bg: linear-gradient(135deg, #4db6ac, #26a69a);
+        }
+
         .container {
             max-width: 1400px; margin: 0 auto;
             background: var(--bg-container); backdrop-filter: blur(18px);
             border-radius: 2rem; border: 1px solid var(--border-glow);
             box-shadow: 0 0 25px var(--border-glow); padding: 1rem;
+            overflow: hidden;
         }
         .header {
             display: flex; justify-content: space-between; align-items: center;
@@ -67,10 +95,10 @@
             -webkit-background-clip: text; background-clip: text; color: transparent;
             margin: 0;
         }
-        button {
+        button, .theme-btn {
             background: var(--btn-bg); border: 1px solid var(--btn-border);
-            color: var(--text); padding: 6px 14px; border-radius: 40px;
-            font-size: 0.75rem; cursor: pointer; backdrop-filter: blur(6px);
+            color: var(--text); padding: 6px 12px; border-radius: 40px;
+            font-size: 0.7rem; cursor: pointer; backdrop-filter: blur(6px);
             transition: 0.2s; white-space: nowrap; font-weight: 500;
         }
         button:active { transform: scale(0.96); }
@@ -88,16 +116,46 @@
         @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
         .current-task-banner {
             width: 100%; background: var(--banner-bg); border-radius: 60px;
-            padding: 16px 20px; margin: 12px 0; text-align: center;
+            padding: 14px 20px; margin: 12px 0; text-align: center;
             font-weight: bold; color: #fff; box-shadow: 0 0 20px var(--border-glow);
             border: 1px solid rgba(255,255,255,0.3); animation: bannerPulse 2.5s infinite;
             overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-            font-size: 1.4rem; letter-spacing: 0.5px;
+            font-size: 1.2rem; letter-spacing: 0.5px;
+            max-width: 100%; box-sizing: border-box;
         }
         @keyframes bannerPulse {
             0%{box-shadow:0 0 10px var(--text-secondary); transform:scale(1);}
             50%{box-shadow:0 0 30px var(--text-secondary); transform:scale(1.01);}
             100%{box-shadow:0 0 10px var(--text-secondary); transform:scale(1);}
+        }
+        /* 当前子任务展示区域 - 美化版 */
+        .current-subtasks {
+            background: var(--card-bg); backdrop-filter: blur(8px);
+            border-radius: 20px; padding: 14px 18px; margin: 8px 0 12px;
+            border: 1px solid var(--border-glow);
+            display: none;
+            color: var(--text);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .current-subtasks .subtasks-header {
+            font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);
+            margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+        }
+        .current-subtasks .subtask-row {
+            display: flex; align-items: center; gap: 10px;
+            padding: 6px 8px; border-radius: 12px;
+            background: rgba(255,255,255,0.03); margin-bottom: 4px;
+            transition: background 0.2s;
+        }
+        .current-subtasks .subtask-row:hover { background: rgba(255,255,255,0.06); }
+        .current-subtasks .subtask-check {
+            font-size: 1rem; min-width: 20px; text-align: center;
+        }
+        .current-subtasks .subtask-text {
+            flex: 1; font-size: 0.8rem; line-height: 1.4;
+        }
+        .current-subtasks .subtask-text.done {
+            text-decoration: line-through; opacity: 0.6;
         }
         .info-bar {
             display: flex; justify-content: space-between; align-items: center;
@@ -174,6 +232,10 @@
             background: var(--card-bg); border: 1px solid var(--border-glow);
             border-radius: 30px; padding: 8px 12px; color: var(--text); outline: none;
         }
+        .time-granularity-btn {
+            background: var(--btn-bg); border: 1px solid var(--btn-border);
+            padding: 4px 10px; font-size: 0.65rem;
+        }
     </style>
 </head>
 <body class="theme-dark">
@@ -185,10 +247,14 @@
                 <span class="conn-dot checking" id="connDot"></span>
                 <span id="connLabel">检测中…</span>
             </div>
+            <button id="granularityBtn" class="time-granularity-btn" title="切换半小时/每小时">⏱️ 半小时</button>
             <button class="theme-btn" data-theme="dark">🌙</button>
             <button class="theme-btn" data-theme="aurora">🌿</button>
             <button class="theme-btn" data-theme="sunset">🌅</button>
             <button class="theme-btn" data-theme="light-gray">◻️</button>
+            <button class="theme-btn" data-theme="sakura">🌸</button>
+            <button class="theme-btn" data-theme="ink">🖋️</button>
+            <button class="theme-btn" data-theme="mint">🍃</button>
             <button id="newWeekBtn">📅 新周</button>
             <button id="tasksPageBtn">📋 待办</button>
             <button id="exportBtn">📎 导出</button>
@@ -197,7 +263,13 @@
         </div>
     </div>
 
+    <!-- 当前任务横幅 -->
     <div id="currentTaskBanner" class="current-task-banner">✨ 加载中…</div>
+    <!-- 当前子任务展示区 (美化) -->
+    <div id="currentSubtasks" class="current-subtasks">
+        <div class="subtasks-header">📋 当前待办</div>
+        <div id="currentSubtasksList"></div>
+    </div>
 
     <div class="info-bar">
         <span id="weekDisplay">--</span>
@@ -221,6 +293,7 @@
     <div class="footer">数据自动保存到云端与本地 · 提醒需授权通知</div>
 </div>
 
+<!-- 子任务弹窗（含主任务编辑） -->
 <div id="subtaskModal" class="modal">
     <div class="modal-card">
         <div class="modal-header">
@@ -242,6 +315,7 @@
     </div>
 </div>
 
+<!-- 待办汇总页 -->
 <div id="tasksPageModal" class="modal">
     <div class="modal-card" style="max-width:700px;">
         <div style="display:flex; justify-content:space-between;">
@@ -260,7 +334,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js"></script>
 <script>
 (function() {
-  // ---------- 配置 ----------
   const SUPABASE_URL = 'https://ickvrfrhlynxnlmnrhcq.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlja3ZyZnJobHlueG5sbW5yaGNxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc4MTEyODUsImV4cCI6MjA5MzM4NzI4NX0.xvdXio6iPMYGRDPHgXRVNAXYm0Kkyh8gu0LDcWz2-JY';
   const USER_ID = 'user_kaungmyat_fixed';
@@ -274,35 +347,25 @@
   let reminderEnabled = false, reminderInterval = null;
   let audioCtx = null;
   let currentSubtaskContext = null;
+  let useHalfHour = true;
 
-  // ---------- 初始化Supabase ----------
   function initSupabase() {
-    try {
-      supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      return true;
-    } catch (e) { return false; }
+    try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); return true; } catch { return false; }
   }
-
-  // ---------- 云端连接测试 ----------
   async function testCloudConnection() {
     if (!supabase) return false;
-    try {
-      const { error } = await supabase.from('plan_data').select('id', { count: 'exact', head: true }).limit(1);
-      return !error;
-    } catch { return false; }
+    try { const { error } = await supabase.from('plan_data').select('id', { count:'exact', head:true }).limit(1); return !error; }
+    catch { return false; }
   }
-
   function updateConnectionStatus(status, text) {
     document.getElementById('connDot').className = 'conn-dot ' + status;
     document.getElementById('connLabel').textContent = text;
   }
-
   async function syncWithCloud() {
     updateConnectionStatus('checking', '检测中…');
     cloudReady = await testCloudConnection();
     if (cloudReady) {
       updateConnectionStatus('online', '云端在线');
-      // 拉取云端数据并合并
       await loadCloudData();
       saveLocal(currentWeekKey, { cache: localCache, table: tableData });
       renderTable();
@@ -311,13 +374,19 @@
     }
   }
 
-  // ---------- 时间槽与表格数据 ----------
   function genTimeSlots() {
     let slots = [];
-    for (let h = 5; h < 24; h++) {
-      slots.push(`${h.toString().padStart(2,'0')}:00 – ${h.toString().padStart(2,'0')}:30`);
-      if (h < 23) slots.push(`${h.toString().padStart(2,'0')}:30 – ${(h+1).toString().padStart(2,'0')}:00`);
-      else slots.push(`23:30 – 24:00`);
+    if (useHalfHour) {
+      for (let h = 5; h < 24; h++) {
+        slots.push(`${h.toString().padStart(2,'0')}:00 – ${h.toString().padStart(2,'0')}:30`);
+        if (h < 23) slots.push(`${h.toString().padStart(2,'0')}:30 – ${(h+1).toString().padStart(2,'0')}:00`);
+        else slots.push(`23:30 – 24:00`);
+      }
+    } else {
+      for (let h = 5; h < 24; h++) {
+        slots.push(`${h.toString().padStart(2,'0')}:00 – ${(h+1).toString().padStart(2,'0')}:00`);
+      }
+      slots.push(`23:00 – 24:00`);
     }
     return slots;
   }
@@ -341,7 +410,6 @@
   }
   resetTableData();
 
-  // ---------- 日期工具 ----------
   function getWeekKey(d) {
     let date = new Date(d); date.setHours(0,0,0,0);
     date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
@@ -364,65 +432,39 @@
     return dates;
   }
 
-  // ---------- 本地存储 ----------
-  function loadLocal(week) {
-    try { return JSON.parse(localStorage.getItem(LS_PREFIX + week) || 'null'); } catch { return null; }
-  }
-  function saveLocal(week, data) {
-    try { localStorage.setItem(LS_PREFIX + week, JSON.stringify(data)); } catch {}
-  }
-  function loadMerged() {
-    try { mergedGroups = JSON.parse(localStorage.getItem(LS_PREFIX + 'merged_' + USER_ID) || '{}'); } catch { mergedGroups = {}; }
-  }
-  function saveMerged() {
-    try { localStorage.setItem(LS_PREFIX + 'merged_' + USER_ID, JSON.stringify(mergedGroups)); } catch {}
-  }
+  function loadLocal(week) { try { return JSON.parse(localStorage.getItem(LS_PREFIX + week) || 'null'); } catch { return null; } }
+  function saveLocal(week, data) { try { localStorage.setItem(LS_PREFIX + week, JSON.stringify(data)); } catch {} }
+  function loadMerged() { try { mergedGroups = JSON.parse(localStorage.getItem(LS_PREFIX + 'merged_' + USER_ID) || '{}'); } catch { mergedGroups = {}; } }
+  function saveMerged() { try { localStorage.setItem(LS_PREFIX + 'merged_' + USER_ID, JSON.stringify(mergedGroups)); } catch {} }
 
-  // ---------- 云端数据 ----------
   async function loadCloudData() {
     if (!cloudReady) return;
-    const { data, error } = await supabase
-      .from('plan_data')
-      .select('date, cell_key, edited_text, subtasks')
-      .eq('user_id', USER_ID)
-      .eq('week_key', currentWeekKey);
+    const { data, error } = await supabase.from('plan_data').select('date,cell_key,edited_text,subtasks')
+      .eq('user_id', USER_ID).eq('week_key', currentWeekKey);
     if (error) return;
     for (let item of data) {
       let [row, col] = item.cell_key.split('_').map(Number);
       let key = `${item.date}_${row}_${col}`;
-      localCache[key] = {
-        text: item.edited_text || tableData[row+1]?.[col] || '',
-        subtasks: item.subtasks || []
-      };
+      localCache[key] = { text: item.edited_text || tableData[row+1]?.[col] || '', subtasks: item.subtasks || [] };
       if (item.edited_text && tableData[row+1]) tableData[row+1][col] = item.edited_text;
     }
   }
-
   async function saveCloudCell(date, row, col, text, subtasks) {
     if (!cloudReady) return;
-    const cellKey = `${row}_${col}`;
     await supabase.from('plan_data').upsert({
-      user_id: USER_ID,
-      week_key: currentWeekKey,
-      date,
-      cell_key: cellKey,
-      edited_text: text,
-      subtasks,
-      updated_at: new Date()
+      user_id: USER_ID, week_key: currentWeekKey, date, cell_key: `${row}_${col}`,
+      edited_text: text, subtasks, updated_at: new Date()
     }, { onConflict: 'user_id, date, cell_key' });
   }
 
-  // ---------- 渲染表格 ----------
   function renderTable() {
     const thead = document.getElementById('tableHead');
     const tbody = document.getElementById('tableBody');
     thead.innerHTML = ''; tbody.innerHTML = '';
-    // 表头
     let trH = document.createElement('tr');
     tableData[0].forEach(h => { let th = document.createElement('th'); th.textContent = h; trH.appendChild(th); });
     thead.appendChild(trH);
 
-    // 建立合并映射
     let mergeMap = {};
     for (let [gid, group] of Object.entries(mergedGroups)) {
       for (let ck of group.cells) mergeMap[ck] = gid;
@@ -437,7 +479,6 @@
         let gid = cellKey ? mergeMap[cellKey] : null;
         let group = gid ? mergedGroups[gid] : null;
         let isMaster = group && group.masterKey === cellKey;
-
         let cell = c === 0 ? document.createElement('th') : document.createElement('td');
         let text = tableData[r][c] || '';
         cell.setAttribute('data-row', r-1);
@@ -446,7 +487,6 @@
           cell.setAttribute('data-date', currentDates[c-1]);
           cell.setAttribute('data-cellkey', cellKey);
         }
-
         if (isMaster) {
           cell.setAttribute('rowspan', group.rowspan);
           cell.setAttribute('colspan', group.colspan);
@@ -456,8 +496,6 @@
             for (let dc = 0; dc < group.colspan; dc++)
               if (dr !== 0 || dc !== 0) skipCells.add(`${r+dr}_${c+dc}`);
         }
-
-        // 子任务计数
         let subtaskInfo = '';
         if (cellKey && localCache[cellKey]?.subtasks?.length > 0) {
           let subs = localCache[cellKey].subtasks;
@@ -475,13 +513,13 @@
 
   function escapeHtml(s) { return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
 
-  // 高亮当前时间
   function highlightNow() {
     document.querySelectorAll('#mainTable td.now-highlight').forEach(td => td.classList.remove('now-highlight'));
     let now = new Date();
     let targetCol = now.getDay() === 0 ? 7 : now.getDay();
     let curMin = now.getHours() * 60 + now.getMinutes();
     let currentTaskText = '';
+    let foundCellKey = null;
     for (let r = 0; r < timeSlots.length; r++) {
       let m = timeSlots[r].match(/(\d+):(\d+)\s*[-–—]\s*(\d+):(\d+)/);
       if (!m) continue;
@@ -491,8 +529,8 @@
         let date = currentDates[targetCol-1];
         if (!date) break;
         let cellKey = `${date}_${r}_${targetCol}`;
+        foundCellKey = cellKey;
         currentTaskText = tableData[r+1]?.[targetCol] || '';
-        // 检查是否合并
         let gid = null;
         for (let [g, group] of Object.entries(mergedGroups)) {
           if (group.cells.includes(cellKey)) { gid = g; break; }
@@ -508,37 +546,49 @@
       }
     }
     document.getElementById('currentTaskBanner').textContent = '✨ ' + (currentTaskText || '暂无计划');
+    updateCurrentSubtasks(foundCellKey);
   }
 
-  // 单元格事件
+  function updateCurrentSubtasks(cellKey) {
+    const container = document.getElementById('currentSubtasks');
+    const listDiv = document.getElementById('currentSubtasksList');
+    if (!cellKey || !localCache[cellKey] || !localCache[cellKey].subtasks || localCache[cellKey].subtasks.length === 0) {
+      container.style.display = 'none';
+      listDiv.innerHTML = '';
+      return;
+    }
+    const subtasks = localCache[cellKey].subtasks;
+    container.style.display = 'block';
+    let html = '';
+    subtasks.forEach(st => {
+      const icon = st.done ? '✅' : '⬜';
+      const textClass = st.done ? 'done' : '';
+      html += `<div class="subtask-row">
+        <span class="subtask-check">${icon}</span>
+        <span class="subtask-text ${textClass}">${escapeHtml(st.text)}</span>
+      </div>`;
+    });
+    listDiv.innerHTML = html;
+  }
+
   function attachCellEvents() {
     document.querySelectorAll('#mainTable td').forEach(cell => {
       cell.onclick = (e) => handleCellClick(cell, e);
     });
   }
-
   function handleCellClick(cell, e) {
-    if (mergeMode) {
-      toggleMergeSelection(cell);
-      return;
-    }
+    if (mergeMode) { toggleMergeSelection(cell); return; }
     let row = parseInt(cell.dataset.row), col = parseInt(cell.dataset.col);
     if (col === 0 || isNaN(row)) return;
     openSubtaskModal(cell.dataset.date, row, col, cell.dataset.cellkey);
   }
 
-  // ---------- 合并功能 ----------
   function toggleMergeSelection(cell) {
     let ck = cell.dataset.cellkey;
     if (!ck) return;
     let idx = mergeSelection.indexOf(ck);
-    if (idx >= 0) {
-      mergeSelection.splice(idx, 1);
-      cell.classList.remove('selected-cell');
-    } else {
-      mergeSelection.push(ck);
-      cell.classList.add('selected-cell');
-    }
+    if (idx >= 0) { mergeSelection.splice(idx,1); cell.classList.remove('selected-cell'); }
+    else { mergeSelection.push(ck); cell.classList.add('selected-cell'); }
     document.getElementById('applyMergeBtn').disabled = mergeSelection.length < 2;
     document.getElementById('mergeHint').textContent = mergeSelection.length ? `已选${mergeSelection.length}个` : '';
   }
@@ -547,13 +597,12 @@
     let cells = mergeSelection.map(ck => {
       let [date, rc] = ck.split(/_(.+)/);
       let [r, c] = rc.split('_').map(Number);
-      return { date, row: r, col: c, key: ck };
+      return { date, row:r, col:c, key:ck };
     });
     let minRow = Math.min(...cells.map(c => c.row)), minCol = Math.min(...cells.map(c => c.col));
     let maxRow = Math.max(...cells.map(c => c.row)), maxCol = Math.max(...cells.map(c => c.col));
     let master = cells.find(c => c.row === minRow && c.col === minCol);
-    let groupId = Date.now().toString();
-    mergedGroups[groupId] = {
+    mergedGroups[Date.now().toString()] = {
       masterKey: master.key,
       cells: cells.map(c => c.key),
       rowspan: maxRow - minRow + 1,
@@ -572,7 +621,6 @@
     document.getElementById('mergeHint').textContent = '';
   }
 
-  // ---------- 子任务弹窗 ----------
   function openSubtaskModal(date, row, col, cellKey) {
     currentSubtaskContext = { date, row, col, cellKey };
     let data = localCache[cellKey] || { text: tableData[row+1][col], subtasks: [] };
@@ -590,7 +638,6 @@
       div.appendChild(cb); div.appendChild(inp); div.appendChild(del);
       listDiv.appendChild(div);
     });
-    // 取消合并按钮
     let unmergeBtn = document.getElementById('unmergeCellBtn');
     let gid = null;
     for (let [g, group] of Object.entries(mergedGroups)) {
@@ -607,7 +654,6 @@
     };
     document.getElementById('subtaskModal').style.display = 'block';
   }
-
   async function saveSubtasksAndClose() {
     if (!currentSubtaskContext) return;
     let { date, row, col, cellKey } = currentSubtaskContext;
@@ -627,7 +673,6 @@
     renderTable();
   }
 
-  // ---------- 待办汇总 ----------
   function renderTasksPage(filter = 'unfinished') {
     let content = document.getElementById('tasksPageContent');
     content.innerHTML = '';
@@ -642,11 +687,11 @@
     }
     if (filter === 'unfinished') allTasks = allTasks.filter(t => !t.done);
     else if (filter === 'finished') allTasks = allTasks.filter(t => t.done);
-    allTasks.sort((a, b) => b.date.localeCompare(a.date) || a.time.localeCompare(b.time));
+    allTasks.sort((a,b) => b.date.localeCompare(a.date) || a.time.localeCompare(b.time));
     if (!allTasks.length) { content.innerHTML = '<p style="padding:20px;">暂无数据</p>'; return; }
     allTasks.forEach(t => {
       let div = document.createElement('div'); div.className = 'subtask-item';
-      div.innerHTML = `<input type="checkbox" ${t.done ? 'checked' : ''} data-key="${t.cellKey}" data-text="${escapeHtml(t.task)}">
+      div.innerHTML = `<input type="checkbox" ${t.done?'checked':''} data-key="${t.cellKey}" data-text="${escapeHtml(t.task)}">
         <span style="flex:1;">${escapeHtml(t.date)} ${t.time} — ${escapeHtml(t.task)}</span>`;
       div.querySelector('input').onchange = async (e) => {
         let ck = e.target.dataset.key, taskText = e.target.dataset.text;
@@ -666,43 +711,36 @@
     });
   }
 
-  // ---------- 提醒 ----------
   function playBeep() {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     let osc = audioCtx.createOscillator();
     let gain = audioCtx.createGain();
     osc.type = 'sine'; osc.frequency.value = 800;
     gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.5);
     osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+    osc.start(); osc.stop(audioCtx.currentTime+0.5);
   }
   function notifyTask(title, body) {
-    if (Notification.permission === 'granted') {
-      new Notification(title, { body });
-      playBeep();
-    }
+    if (Notification.permission === 'granted') { new Notification(title, { body }); playBeep(); }
   }
   function checkReminders() {
     if (!reminderEnabled) return;
     let now = new Date();
-    let targetCol = now.getDay() === 0 ? 7 : now.getDay();
-    let curMin = now.getHours() * 60 + now.getMinutes();
-    for (let r = 0; r < timeSlots.length; r++) {
+    let targetCol = now.getDay()===0 ? 7 : now.getDay();
+    let curMin = now.getHours()*60+now.getMinutes();
+    for (let r=0; r<timeSlots.length; r++) {
       let m = timeSlots[r].match(/(\d+):(\d+)\s*[-–—]\s*(\d+):(\d+)/);
       if (!m) continue;
-      let start = parseInt(m[1]) * 60 + parseInt(m[2]);
-      let end = parseInt(m[3]) * 60 + parseInt(m[4]);
+      let start = parseInt(m[1])*60+parseInt(m[2]);
+      let end = parseInt(m[3])*60+parseInt(m[4]);
       if (curMin >= start && curMin < end) {
         let date = currentDates[targetCol-1];
         if (!date) continue;
         let cellKey = `${date}_${r}_${targetCol}`;
         let taskText = tableData[r+1]?.[targetCol] || '';
-        if (localCache[cellKey]?.subtasks?.some(s => !s.done)) {
-          notifyTask('⏰ 待办提醒', `${timeSlots[r]} — ${taskText}`);
-        } else {
-          notifyTask('⏰ 计划提醒', `${timeSlots[r]} — ${taskText}`);
-        }
+        if (localCache[cellKey]?.subtasks?.some(s=>!s.done)) notifyTask('⏰ 待办提醒', `${timeSlots[r]} — ${taskText}`);
+        else notifyTask('⏰ 计划提醒', `${timeSlots[r]} — ${taskText}`);
         break;
       }
     }
@@ -718,29 +756,33 @@
       else alert('通知权限已被拒绝，请在浏览器设置中允许');
     } else stopReminder();
   }
-  function startReminder() {
-    reminderEnabled = true;
-    document.getElementById('reminderToggleBtn').textContent = '🔔 提醒:开';
-    checkReminders();
-    reminderInterval = setInterval(checkReminders, 60000);
-  }
-  function stopReminder() {
-    reminderEnabled = false;
-    document.getElementById('reminderToggleBtn').textContent = '🔕 提醒:关';
-    if (reminderInterval) clearInterval(reminderInterval);
+  function startReminder() { reminderEnabled = true; document.getElementById('reminderToggleBtn').textContent = '🔔 提醒:开'; checkReminders(); reminderInterval = setInterval(checkReminders, 60000); }
+  function stopReminder() { reminderEnabled = false; document.getElementById('reminderToggleBtn').textContent = '🔕 提醒:关'; clearInterval(reminderInterval); }
+
+  function toggleGranularity() {
+    useHalfHour = !useHalfHour;
+    document.getElementById('granularityBtn').textContent = useHalfHour ? '⏱️ 半小时' : '⏱️ 每小时';
+    if (confirm('切换粒度会重置表格默认内容，但子任务和自定义主任务会丢失。确定继续吗？')) {
+      localCache = {};
+      saveLocal(currentWeekKey, { cache: localCache, table: tableData });
+      resetTableData();
+      renderTable();
+    } else {
+      useHalfHour = !useHalfHour;
+      document.getElementById('granularityBtn').textContent = useHalfHour ? '⏱️ 半小时' : '⏱️ 每小时';
+      resetTableData();
+    }
   }
 
-  // ---------- 其他功能 ----------
-  function updateWeekDisplay() {
-    let now = new Date();
-    document.getElementById('weekDisplay').innerHTML = `${currentWeekKey} ${now.toLocaleTimeString()}`;
-  }
   async function loadAll() {
     updateWeekDisplay();
     let local = loadLocal(currentWeekKey);
     if (local?.table) { tableData = local.table; localCache = local.cache || {}; }
     if (cloudReady) { await loadCloudData(); saveLocal(currentWeekKey, { cache: localCache, table: tableData }); }
     renderTable();
+  }
+  function updateWeekDisplay() {
+    document.getElementById('weekDisplay').innerHTML = `${currentWeekKey} ${new Date().toLocaleTimeString()}`;
   }
   async function newWeek() {
     if (!confirm('新的一周？')) return;
@@ -754,73 +796,66 @@
     renderTable();
   }
   function exportCSV() {
-    let rows = [['时间', '周一', '周二', '周三', '周四', '周五', '周六', '周日']];
-    for (let r = 1; r < tableData.length; r++) rows.push([...tableData[r]]);
-    let csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
-    let blob = new Blob(['\uFEFF' + csv], { type: 'text/csv' });
+    let rows = [['时间','周一','周二','周三','周四','周五','周六','周日']];
+    for (let r=1; r<tableData.length; r++) rows.push([...tableData[r]]);
+    let csv = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+    let blob = new Blob(['\uFEFF'+csv], {type:'text/csv'});
     let a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `plan_${currentWeekKey}.csv`; a.click();
   }
 
-  // ---------- 事件绑定 ----------
   window.onload = async () => {
     initSupabase();
     loadMerged();
     currentWeekKey = getWeekKey(new Date());
     currentDates = getWeekDates(currentWeekKey);
-    // 初始连接检测
     updateConnectionStatus('checking', '检测中…');
     cloudReady = await testCloudConnection();
     updateConnectionStatus(cloudReady ? 'online' : 'offline', cloudReady ? '云端在线' : '连接失败');
     await loadAll();
 
-    // 按钮事件
     document.getElementById('syncBtn').addEventListener('click', syncWithCloud);
     document.getElementById('connStatus').addEventListener('click', syncWithCloud);
     document.getElementById('newWeekBtn').addEventListener('click', newWeek);
-    document.getElementById('tasksPageBtn').addEventListener('click', () => {
+    document.getElementById('tasksPageBtn').addEventListener('click', ()=>{
       document.getElementById('tasksPageModal').style.display = 'block';
       renderTasksPage('unfinished');
     });
-    document.getElementById('closeTasksPage').addEventListener('click', () => document.getElementById('tasksPageModal').style.display = 'none');
-    document.getElementById('filterUnfinished').addEventListener('click', () => renderTasksPage('unfinished'));
-    document.getElementById('filterFinished').addEventListener('click', () => renderTasksPage('finished'));
-    document.getElementById('filterAll').addEventListener('click', () => renderTasksPage('all'));
+    document.getElementById('closeTasksPage').addEventListener('click', ()=> document.getElementById('tasksPageModal').style.display='none');
+    document.getElementById('filterUnfinished').addEventListener('click', ()=>renderTasksPage('unfinished'));
+    document.getElementById('filterFinished').addEventListener('click', ()=>renderTasksPage('finished'));
+    document.getElementById('filterAll').addEventListener('click', ()=>renderTasksPage('all'));
     document.getElementById('exportBtn').addEventListener('click', exportCSV);
     document.getElementById('reminderToggleBtn').addEventListener('click', toggleReminder);
-    document.getElementById('scrollLeft').addEventListener('click', () => document.getElementById('tableWrapper').scrollLeft -= 150);
-    document.getElementById('scrollRight').addEventListener('click', () => document.getElementById('tableWrapper').scrollLeft += 150);
-    document.querySelectorAll('.theme-btn').forEach(b => {
-      b.addEventListener('click', () => document.body.className = 'theme-' + b.dataset.theme);
+    document.getElementById('scrollLeft').addEventListener('click', ()=> document.getElementById('tableWrapper').scrollLeft-=150);
+    document.getElementById('scrollRight').addEventListener('click', ()=> document.getElementById('tableWrapper').scrollLeft+=150);
+    document.querySelectorAll('.theme-btn').forEach(b=>{
+      b.addEventListener('click', ()=> document.body.className = 'theme-'+b.dataset.theme);
     });
-    // 合并按钮
-    document.getElementById('mergeModeBtn').addEventListener('click', () => {
+    document.getElementById('granularityBtn').addEventListener('click', toggleGranularity);
+
+    document.getElementById('mergeModeBtn').addEventListener('click', ()=>{
       mergeMode = !mergeMode;
-      if (mergeMode) {
-        document.getElementById('mergeModeBtn').textContent = '🔲 退出合并';
-        document.getElementById('cancelMergeBtn').disabled = false;
-      } else exitMergeMode();
+      if(mergeMode) { document.getElementById('mergeModeBtn').textContent = '🔲 退出合并'; document.getElementById('cancelMergeBtn').disabled = false; }
+      else exitMergeMode();
     });
     document.getElementById('applyMergeBtn').addEventListener('click', applyMerge);
     document.getElementById('cancelMergeBtn').addEventListener('click', exitMergeMode);
-    // 子任务弹窗
-    document.getElementById('addSubtaskBtn').addEventListener('click', () => {
+
+    document.getElementById('addSubtaskBtn').addEventListener('click', ()=>{
       let inp = document.getElementById('newSubtaskInput');
-      let text = inp.value.trim(); if (!text) return;
+      let text = inp.value.trim(); if(!text) return;
       let div = document.createElement('div'); div.className = 'subtask-item';
-      let cb = document.createElement('input'); cb.type = 'checkbox';
-      let txt = document.createElement('input'); txt.type = 'text'; txt.value = text;
-      let del = document.createElement('button'); del.textContent = '🗑'; del.style.background = 'none'; del.style.border = 'none';
-      del.onclick = () => div.remove();
-      div.appendChild(cb); div.appendChild(txt); div.appendChild(del);
+      div.innerHTML = `<input type="checkbox"><input type="text" value="${escapeHtml(text)}"><button style="background:none;border:none;">🗑</button>`;
+      div.querySelector('button').onclick = ()=> div.remove();
       document.getElementById('subtaskList').appendChild(div);
       inp.value = '';
     });
     document.getElementById('saveSubtaskClose').addEventListener('click', saveSubtasksAndClose);
-    document.getElementById('closeSubtask').addEventListener('click', () => {
+    document.getElementById('closeSubtask').addEventListener('click', ()=>{
       document.getElementById('subtaskModal').style.display = 'none';
       currentSubtaskContext = null;
     });
-    // 定时器
+
     setInterval(highlightNow, 60000);
     setInterval(updateWeekDisplay, 60000);
   };
