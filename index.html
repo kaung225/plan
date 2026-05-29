@@ -29,7 +29,6 @@
             background: var(--bg-body); color: var(--text);
             transition: background 0.3s, color 0.3s;
         }
-        /* 7款主题变量保持不变 */
         body.theme-dark {}
         body.theme-aurora {
             --bg-body: linear-gradient(145deg, #0b2f3c, #021017);
@@ -78,6 +77,14 @@
             --table-bg: rgba(245,255,250,0.7); --th-bg: #b2dfdb; --td-bg: #f0fdfa;
             --btn-bg: #b2dfdb; --btn-border: #4db6ac; --highlight-bg: #4db6ac;
             --modal-bg: rgba(240,255,250,0.95); --banner-bg: linear-gradient(135deg, #4db6ac, #26a69a);
+        }
+        body.theme-ocean {
+            --bg-body: linear-gradient(145deg, #003366, #001a33);
+            --bg-container: rgba(0,30,60,0.75); --border-glow: #66b2ff;
+            --text: #e6f2ff; --text-secondary: #66b2ff; --card-bg: rgba(0,20,40,0.8);
+            --table-bg: rgba(0,10,20,0.5); --th-bg: #00264d; --td-bg: #001a33;
+            --btn-bg: #003366; --btn-border: #66b2ff; --highlight-bg: #66b2ff;
+            --modal-bg: rgba(0,10,20,0.94); --banner-bg: linear-gradient(135deg, #66b2ff, #003366);
         }
 
         .container {
@@ -153,6 +160,7 @@
                 <button class="theme-btn" data-theme="sakura">🌸</button>
                 <button class="theme-btn" data-theme="ink">🖋️</button>
                 <button class="theme-btn" data-theme="mint">🍃</button>
+                <button class="theme-btn" data-theme="ocean">🌊</button>
             </div>
             <button id="granularityBtn" class="time-granularity-btn">⏱️ 半小时</button>
             <button id="newWeekBtn">📅 新周</button>
@@ -228,13 +236,112 @@
         else updateConnectionStatus('offline','连接失败');
     }
 
-    function loadGranularitySetting() { const s = localStorage.getItem(LS_PREFIX+'granularity'); useHalfHour = s!=='hour'; document.getElementById('granularityBtn').textContent = useHalfHour?'⏱️ 半小时':'⏱️ 每小时'; }
-    function saveGranularitySetting() { localStorage.setItem(LS_PREFIX+'granularity', useHalfHour?'half':'hour'); }
+    // ---------- 用户设置 (Supabase 优先) ----------
+    async function loadUserSettings() {
+        let theme = 'dark';
+        let granularity = 'half'; // half 或 hour
+        // 尝试从 Supabase 读取
+        if (cloudReady) {
+            const { data, error } = await supabase
+                .from('user_settings')
+                .select('theme, granularity')
+                .eq('user_id', USER_ID)
+                .maybeSingle();
+            if (!error && data) {
+                theme = data.theme || theme;
+                granularity = data.granularity || granularity;
+            }
+        }
+        // 如果云端没有，回退到 localStorage
+        if (theme === 'dark') theme = localStorage.getItem('selectedTheme') || 'dark';
+        if (granularity === 'half') granularity = localStorage.getItem(LS_PREFIX+'granularity') || 'half';
+
+        // 应用主题
+        setTheme(theme);
+        // 应用时间粒度
+        useHalfHour = granularity !== 'hour';
+        document.getElementById('granularityBtn').textContent = useHalfHour ? '⏱️ 半小时' : '⏱️ 每小时';
+        saveLocalSettings(theme, granularity); // 确保本地有一份副本
+        return { theme, granularity };
+    }
+
+    async function saveUserSettings(theme, granularity) {
+        // 保存到 localStorage
+        localStorage.setItem('selectedTheme', theme);
+        localStorage.setItem(LS_PREFIX+'granularity', granularity);
+        // 保存到 Supabase
+        if (cloudReady) {
+            await supabase.from('user_settings').upsert({
+                user_id: USER_ID,
+                theme: theme,
+                granularity: granularity,
+                updated_at: new Date()
+            }, { onConflict: 'user_id' });
+        }
+    }
+
+    function saveLocalSettings(theme, granularity) {
+        localStorage.setItem('selectedTheme', theme);
+        localStorage.setItem(LS_PREFIX+'granularity', granularity);
+    }
+
+    // 主题切换
+    function setTheme(t) {
+        document.body.className = 'theme-' + t;
+        const currentGranularity = useHalfHour ? 'half' : 'hour';
+        saveUserSettings(t, currentGranularity);
+    }
+
+    // 时间粒度切换
+    function toggleGranularity() {
+        useHalfHour = !useHalfHour;
+        document.getElementById('granularityBtn').textContent = useHalfHour ? '⏱️ 半小时' : '⏱️ 每小时';
+        const currentTheme = document.body.className.replace('theme-', '') || 'dark';
+        saveUserSettings(currentTheme, useHalfHour ? 'half' : 'hour');
+        if (confirm('切换粒度会重置表格默认内容，但子任务和自定义主任务会丢失。确定继续吗？')) {
+            localCache = {};
+            saveLocal(currentWeekKey, { cache: localCache, table: tableData });
+            resetTableData();
+            renderTable();
+        } else {
+            useHalfHour = !useHalfHour;
+            document.getElementById('granularityBtn').textContent = useHalfHour ? '⏱️ 半小时' : '⏱️ 每小时';
+            resetTableData();
+        }
+    }
+
+    // ---------- 提醒状态（仅 localStorage，因为依赖设备权限） ----------
+    function saveReminderState() { localStorage.setItem('reminderEnabled', reminderEnabled ? 'true' : 'false'); }
+    function loadReminderState() {
+        const saved = localStorage.getItem('reminderEnabled');
+        if (saved === 'true') {
+            if (Notification.permission === 'granted') {
+                startReminder(false);
+            } else if (Notification.permission === 'default') {
+                Notification.requestPermission().then(p => {
+                    if (p === 'granted') startReminder(false);
+                    else {
+                        reminderEnabled = false;
+                        saveReminderState();
+                        document.getElementById('reminderToggleBtn').textContent = '🔕 提醒:关';
+                    }
+                });
+            } else {
+                reminderEnabled = false;
+                saveReminderState();
+                document.getElementById('reminderToggleBtn').textContent = '🔕 提醒:关';
+            }
+        }
+    }
 
     function genTimeSlots() {
         let slots = [];
-        if(useHalfHour) { for(let h=5;h<24;h++) { slots.push(`${h.toString().padStart(2,'0')}:00 – ${h.toString().padStart(2,'0')}:30`); if(h<23) slots.push(`${h.toString().padStart(2,'0')}:30 – ${(h+1).toString().padStart(2,'0')}:00`); else slots.push(`23:30 – 24:00`); } }
-        else { for(let h=5;h<24;h++) slots.push(`${h.toString().padStart(2,'0')}:00 – ${(h+1).toString().padStart(2,'0')}:00`); slots.push(`23:00 – 24:00`); }
+        if(useHalfHour) {
+            for(let h=5;h<24;h++) { slots.push(`${h.toString().padStart(2,'0')}:00 - ${h.toString().padStart(2,'0')}:30`); if(h<23) slots.push(`${h.toString().padStart(2,'0')}:30 - ${(h+1).toString().padStart(2,'0')}:00`); else slots.push(`23:30 - 24:00`); }
+        } else {
+            for(let h=5;h<24;h++) slots.push(`${h.toString().padStart(2,'0')}:00 - ${(h+1).toString().padStart(2,'0')}:00`);
+            slots.push(`23:00 - 24:00`);
+        }
         return slots;
     }
     function defaultTask(h) { if(h>=5&&h<8) return '晨间日语'; if(h>=8&&h<12) return '工作/教学'; if(h>=12&&h<14) return '午餐休息'; if(h>=14&&h<18) return '下午备课'; if(h>=18&&h<22) return '晚间学习'; return '放松/睡眠'; }
@@ -247,12 +354,6 @@
     function saveLocal(week,data) { try { localStorage.setItem(LS_PREFIX+week,JSON.stringify(data)); } catch {} }
     function loadMerged() { try { mergedGroups=JSON.parse(localStorage.getItem(LS_PREFIX+'merged_'+USER_ID)||'{}'); } catch { mergedGroups={}; } }
     function saveMerged() { try { localStorage.setItem(LS_PREFIX+'merged_'+USER_ID,JSON.stringify(mergedGroups)); } catch {} }
-
-    function setTheme(t) { document.body.className='theme-'+t; localStorage.setItem('selectedTheme',t); }
-    function loadTheme() { const s=localStorage.getItem('selectedTheme'); if(s&&['dark','aurora','sunset','light-gray','sakura','ink','mint'].includes(s)) setTheme(s); else setTheme('dark'); }
-
-    function saveReminderState() { localStorage.setItem('reminderEnabled', reminderEnabled?'true':'false'); }
-    function loadReminderState() { if(localStorage.getItem('reminderEnabled')==='true') { if(Notification.permission==='granted') startReminder(false); else if(Notification.permission==='default') Notification.requestPermission().then(p=>{ if(p==='granted') startReminder(false); }); } }
 
     async function loadCloudData() { if(!cloudReady) return; const { data,error } = await supabase.from('plan_data').select('date,cell_key,edited_text,subtasks').eq('user_id',USER_ID).eq('week_key',currentWeekKey); if(error) return; for(let item of data) { let [row,col]=item.cell_key.split('_').map(Number); let key=`${item.date}_${row}_${col}`; localCache[key]={text:item.edited_text||tableData[row+1]?.[col]||'',subtasks:item.subtasks||[]}; if(item.edited_text&&tableData[row+1]) tableData[row+1][col]=item.edited_text; } }
     async function saveCloudCell(date,row,col,text,subtasks) { if(!cloudReady) return; await supabase.from('plan_data').upsert({user_id:USER_ID,week_key:currentWeekKey,date,cell_key:`${row}_${col}`,edited_text:text,subtasks,updated_at:new Date()},{onConflict:'user_id,date,cell_key'}); }
@@ -286,40 +387,45 @@
 
     function escapeHtml(s) { return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
 
-    // 修复后的高亮函数：根据分钟数直接计算行号
-    function highlightNow() {
-        document.querySelectorAll('#mainTable td.now-highlight').forEach(td=>td.classList.remove('now-highlight'));
+    function getCurrentSlot() {
         let now = new Date();
-        let targetCol = now.getDay()===0?7:now.getDay();
         let curMin = now.getHours()*60 + now.getMinutes();
-        let currentTaskText = '', foundCellKey = null;
-        let slotIndex = -1;
-        if (useHalfHour) {
-            if (curMin >= 5*60 && curMin < 24*60) slotIndex = Math.floor((curMin - 5*60) / 30);
-        } else {
-            if (curMin >= 5*60 && curMin < 24*60) slotIndex = Math.floor((curMin - 5*60) / 60);
-        }
-        if (slotIndex >= 0 && slotIndex < timeSlots.length) {
-            let date = currentDates[targetCol-1];
-            if (date) {
-                let cellKey = `${date}_${slotIndex}_${targetCol}`;
-                foundCellKey = cellKey;
-                currentTaskText = tableData[slotIndex+1]?.[targetCol] || '';
-                let gid = null;
-                for (let [g, group] of Object.entries(mergedGroups)) {
-                    if (group.cells.includes(cellKey)) { gid = g; break; }
-                }
-                if (gid) {
-                    let masterCell = document.querySelector(`td[data-merge-gid="${gid}"]`);
-                    if (masterCell) masterCell.classList.add('now-highlight');
-                } else {
-                    let cell = document.querySelector(`td[data-cellkey="${cellKey}"]`);
-                    if (cell) cell.classList.add('now-highlight');
-                }
+        let col = now.getDay()===0?7:now.getDay();
+        for (let i=0; i<timeSlots.length; i++) {
+            let parts = timeSlots[i].split(/[-–—]/);
+            if (parts.length < 2) continue;
+            let startTime = parts[0].trim().split(':');
+            let endTime = parts[1].trim().split(':');
+            if (startTime.length < 2 || endTime.length < 2) continue;
+            let startMin = parseInt(startTime[0])*60 + parseInt(startTime[1]);
+            let endMin = parseInt(endTime[0])*60 + parseInt(endTime[1]);
+            if (!isNaN(startMin) && !isNaN(endMin) && curMin >= startMin && curMin < endMin) {
+                return { row: i, col: col };
             }
         }
+        return null;
+    }
+
+    function highlightNow() {
+        document.querySelectorAll('#mainTable td.now-highlight').forEach(td=>td.classList.remove('now-highlight'));
+        let slot = getCurrentSlot();
+        if (!slot) { document.getElementById('currentTaskBanner').textContent='✨ 暂无计划'; updateCurrentSubtasks(null); return; }
+        let {row, col} = slot;
+        let date = currentDates[col-1];
+        if (!date) return;
+        let cellKey = `${date}_${row}_${col}`;
+        let currentTaskText = tableData[row+1]?.[col] || '';
         document.getElementById('currentTaskBanner').textContent = '✨ ' + (currentTaskText || '暂无计划');
-        updateCurrentSubtasks(foundCellKey);
+        let gid = null;
+        for (let [g, group] of Object.entries(mergedGroups)) { if (group.cells.includes(cellKey)) { gid = g; break; } }
+        if (gid) {
+            let masterCell = document.querySelector(`td[data-merge-gid="${gid}"]`);
+            if (masterCell) masterCell.classList.add('now-highlight');
+        } else {
+            let cell = document.querySelector(`td[data-cellkey="${cellKey}"]`);
+            if (cell) cell.classList.add('now-highlight');
+        }
+        updateCurrentSubtasks(cellKey);
     }
 
     function updateCurrentSubtasks(cellKey) {
@@ -371,34 +477,58 @@
     }
     function notifyTask(title,body) { if(Notification.permission==='granted') { new Notification(title,{body}); playBeep(); } }
 
-    // 修复后的提醒检查：同样使用索引计算，不再匹配字符串
     function checkReminders() {
         if(!reminderEnabled) return;
-        let now=new Date(); let targetCol=now.getDay()===0?7:now.getDay(); let curMin=now.getHours()*60+now.getMinutes();
-        let slotIndex=-1;
-        if(useHalfHour) { if(curMin>=5*60&&curMin<24*60) slotIndex=Math.floor((curMin-5*60)/30); }
-        else { if(curMin>=5*60&&curMin<24*60) slotIndex=Math.floor((curMin-5*60)/60); }
-        if(slotIndex>=0&&slotIndex<timeSlots.length) {
-            let date=currentDates[targetCol-1]; if(!date) return;
-            let cellKey=`${date}_${slotIndex}_${targetCol}`;
-            let slotId=`${currentWeekKey}_${slotIndex}_${targetCol}`;
-            if(lastRemindedSlot===slotId) return;
-            let taskText=tableData[slotIndex+1]?.[targetCol]||'';
-            let hasUnfinished=localCache[cellKey]?.subtasks?.some(s=>!s.done);
-            if(hasUnfinished) notifyTask('⏰ 待办提醒',`${timeSlots[slotIndex]} — ${taskText}`);
-            else notifyTask('⏰ 计划提醒',`${timeSlots[slotIndex]} — ${taskText}`);
-            lastRemindedSlot=slotId;
-        }
+        let slot = getCurrentSlot();
+        if (!slot) return;
+        let {row, col} = slot;
+        let date = currentDates[col-1];
+        if (!date) return;
+        let cellKey = `${date}_${row}_${col}`;
+        let slotId = `${currentWeekKey}_${row}_${col}`;
+        if (lastRemindedSlot === slotId) return;
+        let taskText = tableData[row+1]?.[col] || '';
+        let hasUnfinished = localCache[cellKey]?.subtasks?.some(s => !s.done);
+        if (hasUnfinished) notifyTask('⏰ 待办提醒', `${timeSlots[row]} — ${taskText}`);
+        else notifyTask('⏰ 计划提醒', `${timeSlots[row]} — ${taskText}`);
+        lastRemindedSlot = slotId;
     }
 
-    function toggleReminder() { if(!reminderEnabled) { if(Notification.permission==='default') Notification.requestPermission().then(p=>{ if(p==='granted') startReminder(true); else alert('需要通知权限才能使用提醒功能'); }); else if(Notification.permission==='granted') startReminder(true); else alert('通知权限已被拒绝，请在浏览器设置中允许'); } else stopReminder(); }
-    function startReminder(showAlert=true) { reminderEnabled=true; document.getElementById('reminderToggleBtn').textContent='🔔 提醒:开'; lastRemindedSlot=null; checkReminders(); if(reminderInterval) clearInterval(reminderInterval); reminderInterval=setInterval(checkReminders,60000); saveReminderState(); }
-    function stopReminder() { reminderEnabled=false; document.getElementById('reminderToggleBtn').textContent='🔕 提醒:关'; if(reminderInterval) clearInterval(reminderInterval); saveReminderState(); }
-
-    function toggleGranularity() {
-        useHalfHour=!useHalfHour; document.getElementById('granularityBtn').textContent=useHalfHour?'⏱️ 半小时':'⏱️ 每小时'; saveGranularitySetting();
-        if(confirm('切换粒度会重置表格默认内容，但子任务和自定义主任务会丢失。确定继续吗？')) { localCache={}; saveLocal(currentWeekKey,{cache:localCache,table:tableData}); resetTableData(); renderTable(); }
-        else { useHalfHour=!useHalfHour; document.getElementById('granularityBtn').textContent=useHalfHour?'⏱️ 半小时':'⏱️ 每小时'; saveGranularitySetting(); resetTableData(); }
+    function toggleReminder() {
+        if (!reminderEnabled) {
+            if (Notification.permission === 'default') {
+                Notification.requestPermission().then(p => {
+                    if (p === 'granted') startReminder(true);
+                    else {
+                        alert('需要通知权限才能使用提醒功能');
+                        reminderEnabled = false;
+                        saveReminderState();
+                    }
+                });
+            } else if (Notification.permission === 'granted') {
+                startReminder(true);
+            } else {
+                alert('通知权限已被拒绝，请在浏览器设置中允许');
+            }
+        } else {
+            stopReminder();
+        }
+    }
+    function startReminder(updateUI = true) {
+        reminderEnabled = true;
+        if (updateUI) document.getElementById('reminderToggleBtn').textContent = '🔔 提醒:开';
+        else document.getElementById('reminderToggleBtn').textContent = '🔔 提醒:开';
+        lastRemindedSlot = null;
+        checkReminders();
+        if (reminderInterval) clearInterval(reminderInterval);
+        reminderInterval = setInterval(checkReminders, 60000);
+        saveReminderState();
+    }
+    function stopReminder() {
+        reminderEnabled = false;
+        document.getElementById('reminderToggleBtn').textContent = '🔕 提醒:关';
+        if (reminderInterval) clearInterval(reminderInterval);
+        saveReminderState();
     }
 
     async function loadAll() { updateWeekDisplay(); let local=loadLocal(currentWeekKey); if(local?.table) { tableData=local.table; localCache=local.cache||{}; } if(cloudReady) { await loadCloudData(); saveLocal(currentWeekKey,{cache:localCache,table:tableData}); } renderTable(); }
@@ -410,38 +540,47 @@
 
     function toggleMenu() { document.getElementById('collapsiblePanel').classList.toggle('open'); }
 
-    window.onload=async()=>{
-        initSupabase(); loadMerged(); loadTheme(); loadGranularitySetting();
-        timeSlots=genTimeSlots(); tableData=[['时间','周一','周二','周三','周四','周五','周六','周日']];
-        for(let t of timeSlots) { let hour=parseInt(t.split(':')[0]); let row=[t]; for(let i=0;i<7;i++) row.push(defaultTask(hour)); tableData.push(row); }
-        currentWeekKey=getWeekKey(new Date()); currentDates=getWeekDates(currentWeekKey);
-        updateConnectionStatus('checking','检测中…'); cloudReady=await testCloudConnection(); updateConnectionStatus(cloudReady?'online':'offline',cloudReady?'云端在线':'连接失败');
-        await loadAll(); loadReminderState();
+    window.onload = async () => {
+        initSupabase(); loadMerged();
+        // 先测试连接
+        updateConnectionStatus('checking','检测中…');
+        cloudReady = await testCloudConnection();
+        updateConnectionStatus(cloudReady?'online':'offline', cloudReady?'云端在线':'连接失败');
+        // 加载用户设置（主题/粒度）
+        await loadUserSettings();
+        // 根据设置生成表格
+        timeSlots = genTimeSlots();
+        tableData = [['时间','周一','周二','周三','周四','周五','周六','周日']];
+        for (let t of timeSlots) { let hour = parseInt(t.split(':')[0]); let row = [t]; for (let i=0;i<7;i++) row.push(defaultTask(hour)); tableData.push(row); }
+        currentWeekKey = getWeekKey(new Date());
+        currentDates = getWeekDates(currentWeekKey);
+        await loadAll();
+        loadReminderState();
 
-        document.getElementById('menuToggle').addEventListener('click',toggleMenu);
-        document.getElementById('syncBtn').addEventListener('click',syncWithCloud);
-        document.getElementById('connStatus').addEventListener('click',syncWithCloud);
-        document.getElementById('newWeekBtn').addEventListener('click',newWeek);
-        document.getElementById('tasksPageBtn').addEventListener('click',()=>{ document.getElementById('tasksPageModal').style.display='block'; renderTasksPage('unfinished'); });
-        document.getElementById('closeTasksPage').addEventListener('click',()=>document.getElementById('tasksPageModal').style.display='none');
-        document.getElementById('filterUnfinished').addEventListener('click',()=>renderTasksPage('unfinished'));
-        document.getElementById('filterFinished').addEventListener('click',()=>renderTasksPage('finished'));
-        document.getElementById('filterAll').addEventListener('click',()=>renderTasksPage('all'));
-        document.getElementById('exportBtn').addEventListener('click',exportCSV);
-        document.getElementById('importBtn').addEventListener('click',importCSV);
-        document.getElementById('reminderToggleBtn').addEventListener('click',toggleReminder);
-        document.getElementById('scrollLeft').addEventListener('click',()=>document.getElementById('tableWrapper').scrollLeft-=150);
-        document.getElementById('scrollRight').addEventListener('click',()=>document.getElementById('tableWrapper').scrollLeft+=150);
-        document.querySelectorAll('.theme-btn').forEach(b=>b.addEventListener('click',()=>setTheme(b.dataset.theme)));
-        document.getElementById('granularityBtn').addEventListener('click',toggleGranularity);
-        document.getElementById('mergeModeBtn').addEventListener('click',()=>{ mergeMode=!mergeMode; if(mergeMode){ document.getElementById('mergeModeBtn').textContent='🔲 退出合并'; document.getElementById('cancelMergeBtn').disabled=false; } else exitMergeMode(); });
-        document.getElementById('applyMergeBtn').addEventListener('click',applyMerge);
-        document.getElementById('cancelMergeBtn').addEventListener('click',exitMergeMode);
-        document.getElementById('addSubtaskBtn').addEventListener('click',()=>{ let inp=document.getElementById('newSubtaskInput'); let text=inp.value.trim(); if(!text) return; let div=document.createElement('div'); div.className='subtask-item'; div.innerHTML=`<input type="checkbox"><input type="text" value="${escapeHtml(text)}"><button style="background:none;border:none;">🗑</button>`; div.querySelector('button').onclick=()=>div.remove(); document.getElementById('subtaskList').appendChild(div); inp.value=''; });
-        document.getElementById('saveSubtaskClose').addEventListener('click',saveSubtasksAndClose);
-        document.getElementById('closeSubtask').addEventListener('click',()=>{ document.getElementById('subtaskModal').style.display='none'; currentSubtaskContext=null; });
-        setInterval(highlightNow,60000);
-        setInterval(updateWeekDisplay,60000);
+        document.getElementById('menuToggle').addEventListener('click', toggleMenu);
+        document.getElementById('syncBtn').addEventListener('click', syncWithCloud);
+        document.getElementById('connStatus').addEventListener('click', syncWithCloud);
+        document.getElementById('newWeekBtn').addEventListener('click', newWeek);
+        document.getElementById('tasksPageBtn').addEventListener('click', ()=>{ document.getElementById('tasksPageModal').style.display='block'; renderTasksPage('unfinished'); });
+        document.getElementById('closeTasksPage').addEventListener('click', ()=>document.getElementById('tasksPageModal').style.display='none');
+        document.getElementById('filterUnfinished').addEventListener('click', ()=>renderTasksPage('unfinished'));
+        document.getElementById('filterFinished').addEventListener('click', ()=>renderTasksPage('finished'));
+        document.getElementById('filterAll').addEventListener('click', ()=>renderTasksPage('all'));
+        document.getElementById('exportBtn').addEventListener('click', exportCSV);
+        document.getElementById('importBtn').addEventListener('click', importCSV);
+        document.getElementById('reminderToggleBtn').addEventListener('click', toggleReminder);
+        document.getElementById('scrollLeft').addEventListener('click', ()=>document.getElementById('tableWrapper').scrollLeft-=150);
+        document.getElementById('scrollRight').addEventListener('click', ()=>document.getElementById('tableWrapper').scrollLeft+=150);
+        document.querySelectorAll('.theme-btn').forEach(b=>b.addEventListener('click', ()=> setTheme(b.dataset.theme)));
+        document.getElementById('granularityBtn').addEventListener('click', toggleGranularity);
+        document.getElementById('mergeModeBtn').addEventListener('click', ()=>{ mergeMode=!mergeMode; if(mergeMode){ document.getElementById('mergeModeBtn').textContent='🔲 退出合并'; document.getElementById('cancelMergeBtn').disabled=false; } else exitMergeMode(); });
+        document.getElementById('applyMergeBtn').addEventListener('click', applyMerge);
+        document.getElementById('cancelMergeBtn').addEventListener('click', exitMergeMode);
+        document.getElementById('addSubtaskBtn').addEventListener('click', ()=>{ let inp=document.getElementById('newSubtaskInput'); let text=inp.value.trim(); if(!text) return; let div=document.createElement('div'); div.className='subtask-item'; div.innerHTML=`<input type="checkbox"><input type="text" value="${escapeHtml(text)}"><button style="background:none;border:none;">🗑</button>`; div.querySelector('button').onclick=()=>div.remove(); document.getElementById('subtaskList').appendChild(div); inp.value=''; });
+        document.getElementById('saveSubtaskClose').addEventListener('click', saveSubtasksAndClose);
+        document.getElementById('closeSubtask').addEventListener('click', ()=>{ document.getElementById('subtaskModal').style.display='none'; currentSubtaskContext=null; });
+        setInterval(highlightNow, 60000);
+        setInterval(updateWeekDisplay, 60000);
     };
 })();
 </script>
