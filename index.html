@@ -303,6 +303,7 @@
     <div class="footer">数据自动保存到云端与本地 · 提醒需授权通知</div>
 </div>
 
+<!-- 子任务弹窗 -->
 <div id="subtaskModal" class="modal">
     <div class="modal-card">
         <div class="modal-header">
@@ -317,13 +318,14 @@
             <input type="text" id="newSubtaskInput" placeholder="添加子任务...">
             <button id="addSubtaskBtn">➕</button>
         </div>
-        <div style="display: flex; gap: 10px; margin-top: 12px;">
+        <div style="display:flex; gap:10px; margin-top:12px;">
             <button id="saveSubtaskClose" style="flex:1;">保存并关闭</button>
             <button id="unmergeCellBtn" style="flex:1; display:none;">🔓 取消合并</button>
         </div>
     </div>
 </div>
 
+<!-- 待办汇总页 -->
 <div id="tasksPageModal" class="modal">
     <div class="modal-card" style="max-width:700px;">
         <div style="display:flex; justify-content:space-between;">
@@ -356,9 +358,8 @@
   let audioCtx = null;
   let currentSubtaskContext = null;
   let useHalfHour = true;
-  let lastRemindedSlot = null; // 记录上次提醒的时段，避免重复
+  let lastRemindedSlot = null;
 
-  // 注册 Service Worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js');
   }
@@ -386,6 +387,16 @@
     } else {
       updateConnectionStatus('offline','连接失败');
     }
+  }
+
+  function loadGranularitySetting() {
+    const saved = localStorage.getItem(LS_PREFIX + 'granularity');
+    if (saved === 'hour') useHalfHour = false;
+    else useHalfHour = true;
+    document.getElementById('granularityBtn').textContent = useHalfHour ? '⏱️ 半小时' : '⏱️ 每小时';
+  }
+  function saveGranularitySetting() {
+    localStorage.setItem(LS_PREFIX + 'granularity', useHalfHour ? 'half' : 'hour');
   }
 
   function genTimeSlots() {
@@ -420,7 +431,6 @@
       tableData.push(row);
     }
   }
-  resetTableData();
 
   function getWeekKey(d) {
     let date = new Date(d); date.setHours(0,0,0,0);
@@ -448,6 +458,34 @@
   function saveLocal(week, data) { try { localStorage.setItem(LS_PREFIX+week, JSON.stringify(data)); } catch {} }
   function loadMerged() { try { mergedGroups = JSON.parse(localStorage.getItem(LS_PREFIX+'merged_'+USER_ID)||'{}'); } catch { mergedGroups={}; } }
   function saveMerged() { try { localStorage.setItem(LS_PREFIX+'merged_'+USER_ID, JSON.stringify(mergedGroups)); } catch {} }
+
+  function setTheme(theme) {
+    document.body.className = 'theme-' + theme;
+    localStorage.setItem('selectedTheme', theme);
+  }
+  function loadTheme() {
+    const saved = localStorage.getItem('selectedTheme');
+    if (saved && ['dark','aurora','sunset','light-gray','sakura','ink','mint'].includes(saved)) {
+      setTheme(saved);
+    } else {
+      setTheme('dark');
+    }
+  }
+
+  function saveReminderState() {
+    localStorage.setItem('reminderEnabled', reminderEnabled);
+  }
+  function loadReminderState() {
+    const saved = localStorage.getItem('reminderEnabled');
+    if (saved === 'true') {
+      if (Notification.permission === 'granted') startReminder(false);
+      else if (Notification.permission === 'default') {
+        Notification.requestPermission().then(perm => {
+          if (perm === 'granted') startReminder(false);
+        });
+      }
+    }
+  }
 
   async function loadCloudData() {
     if (!cloudReady) return;
@@ -787,29 +825,33 @@
     if (!reminderEnabled) {
       if (Notification.permission === 'default') {
         Notification.requestPermission().then(perm => {
-          if (perm==='granted') startReminder();
+          if (perm==='granted') startReminder(true);
           else alert('需要通知权限才能使用提醒功能');
         });
-      } else if (Notification.permission==='granted') startReminder();
+      } else if (Notification.permission==='granted') startReminder(true);
       else alert('通知权限已被拒绝，请在浏览器设置中允许');
     } else stopReminder();
   }
-  function startReminder() {
+  function startReminder(showAlert = true) {
     reminderEnabled = true;
     document.getElementById('reminderToggleBtn').textContent = '🔔 提醒:开';
-    lastRemindedSlot = null; // 开启时重置记录
+    lastRemindedSlot = null;
     checkReminders();
+    if (reminderInterval) clearInterval(reminderInterval);
     reminderInterval = setInterval(checkReminders, 60000);
+    saveReminderState();
   }
   function stopReminder() {
     reminderEnabled = false;
     document.getElementById('reminderToggleBtn').textContent = '🔕 提醒:关';
-    clearInterval(reminderInterval);
+    if (reminderInterval) clearInterval(reminderInterval);
+    saveReminderState();
   }
 
   function toggleGranularity() {
     useHalfHour = !useHalfHour;
     document.getElementById('granularityBtn').textContent = useHalfHour ? '⏱️ 半小时' : '⏱️ 每小时';
+    saveGranularitySetting();
     if (confirm('切换粒度会重置表格默认内容，但子任务和自定义主任务会丢失。确定继续吗？')) {
       localCache = {};
       saveLocal(currentWeekKey, { cache: localCache, table: tableData });
@@ -818,6 +860,7 @@
     } else {
       useHalfHour = !useHalfHour;
       document.getElementById('granularityBtn').textContent = useHalfHour ? '⏱️ 半小时' : '⏱️ 每小时';
+      saveGranularitySetting();
       resetTableData();
     }
   }
@@ -826,7 +869,10 @@
     updateWeekDisplay();
     let local = loadLocal(currentWeekKey);
     if (local?.table) { tableData = local.table; localCache = local.cache || {}; }
-    if (cloudReady) { await loadCloudData(); saveLocal(currentWeekKey, { cache: localCache, table: tableData }); }
+    if (cloudReady) {
+      await loadCloudData();
+      saveLocal(currentWeekKey, { cache: localCache, table: tableData });
+    }
     renderTable();
   }
   function updateWeekDisplay() {
@@ -843,6 +889,7 @@
     saveLocal(currentWeekKey, { cache: localCache, table: tableData });
     renderTable();
   }
+
   function exportCSV() {
     let rows = [['时间','周一','周二','周三','周四','周五','周六','周日']];
     for (let r=1; r<tableData.length; r++) rows.push([...tableData[r]]);
@@ -862,7 +909,7 @@
       let lines = text.trim().split('\n');
       if (lines.length < 2) { alert('CSV文件无效'); return; }
       let header = lines[0].split(',').map(h => h.replace(/"/g,'').trim());
-      if (header[0]!=='时间' || header.length!==8) { alert('CSV格式不正确，需包含“时间,周一,...,周日”'); return; }
+      if (header[0]!=='时间' || header.length!==8) { alert('CSV格式不正确'); return; }
       let newData = [header];
       for (let i=1; i<lines.length; i++) {
         let cols = lines[i].split(',').map(c => c.replace(/"/g,'').trim());
@@ -887,12 +934,24 @@
   window.onload = async () => {
     initSupabase();
     loadMerged();
+    loadTheme();
+    loadGranularitySetting();
+    timeSlots = genTimeSlots();
+    tableData = [['时间','周一','周二','周三','周四','周五','周六','周日']];
+    for (let t of timeSlots) {
+      let hour = parseInt(t.split(':')[0]);
+      let row = [t];
+      for (let i=0;i<7;i++) row.push(defaultTask(hour));
+      tableData.push(row);
+    }
+
     currentWeekKey = getWeekKey(new Date());
     currentDates = getWeekDates(currentWeekKey);
     updateConnectionStatus('checking','检测中…');
     cloudReady = await testCloudConnection();
     updateConnectionStatus(cloudReady?'online':'offline', cloudReady?'云端在线':'连接失败');
     await loadAll();
+    loadReminderState();
 
     document.getElementById('menuToggle').addEventListener('click', toggleMenu);
     document.getElementById('syncBtn').addEventListener('click', syncWithCloud);
@@ -912,7 +971,7 @@
     document.getElementById('scrollLeft').addEventListener('click', ()=> document.getElementById('tableWrapper').scrollLeft-=150);
     document.getElementById('scrollRight').addEventListener('click', ()=> document.getElementById('tableWrapper').scrollLeft+=150);
     document.querySelectorAll('.theme-btn').forEach(b=>{
-      b.addEventListener('click', ()=> document.body.className = 'theme-'+b.dataset.theme);
+      b.addEventListener('click', ()=> setTheme(b.dataset.theme));
     });
     document.getElementById('granularityBtn').addEventListener('click', toggleGranularity);
     document.getElementById('mergeModeBtn').addEventListener('click', ()=>{
