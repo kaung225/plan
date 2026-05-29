@@ -3,23 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>强韧计划 · 极简周计划+待办</title>
+    <title>强韧计划</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2DD4BF">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="强韧计划">
+    <link rel="apple-touch-icon" href="icon-512.png">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         :root {
             --bg-body: radial-gradient(circle at 20% 30%, #0a0f1e, #03060c);
             --bg-container: rgba(12, 20, 35, 0.75);
             --border-glow: rgba(0, 255, 255, 0.35);
-            --text: #ffffff;
-            --text-secondary: #2DD4BF;
-            --card-bg: rgba(0,0,0,0.6);
-            --table-bg: rgba(0,0,0,0.25);
-            --th-bg: #0f172ad9;
-            --td-bg: rgba(10,20,35,0.7);
-            --btn-bg: rgba(20,30,45,0.85);
-            --btn-border: #2DD4BF;
-            --highlight-bg: #2DD4BF;
-            --modal-bg: rgba(0,0,0,0.92);
+            --text: #ffffff; --text-secondary: #2DD4BF;
+            --card-bg: rgba(0,0,0,0.6); --table-bg: rgba(0,0,0,0.25);
+            --th-bg: #0f172ad9; --td-bg: rgba(10,20,35,0.7);
+            --btn-bg: rgba(20,30,45,0.85); --btn-border: #2DD4BF;
+            --highlight-bg: #2DD4BF; --modal-bg: rgba(0,0,0,0.92);
             --banner-bg: linear-gradient(135deg, #2DD4BF, #0f766e);
         }
         body {
@@ -28,8 +29,7 @@
             background: var(--bg-body); color: var(--text);
             transition: background 0.3s, color 0.3s;
         }
-        /* 主题定义 */
-        body.theme-dark { /* 默认深空 */ }
+        body.theme-dark {}
         body.theme-aurora {
             --bg-body: linear-gradient(145deg, #0b2f3c, #021017);
             --bg-container: rgba(0,30,40,0.75); --border-glow: #4ade80;
@@ -114,6 +114,21 @@
         .conn-dot.online { background: #10b981; box-shadow: 0 0 6px #10b981; }
         .conn-dot.checking { background: #f59e0b; animation: pulse 0.8s infinite; }
         @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+        .hamburger-menu {
+            display: flex; align-items: center; gap: 6px; cursor: pointer;
+            background: var(--btn-bg); border: 1px solid var(--btn-border);
+            padding: 6px 14px; border-radius: 40px; font-size: 0.8rem;
+        }
+        .collapsible-panel {
+            max-height: 0; overflow: hidden; transition: max-height 0.3s ease-out;
+            background: var(--card-bg); backdrop-filter: blur(12px);
+            border-radius: 20px; margin: 8px 0;
+        }
+        .collapsible-panel.open {
+            max-height: 600px; padding: 12px; border: 1px solid var(--border-glow);
+        }
+        .tools-grid { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .theme-group { display: flex; gap: 4px; flex-wrap: wrap; }
         .current-task-banner {
             width: 100%; background: var(--banner-bg); border-radius: 60px;
             padding: 14px 20px; margin: 12px 0; text-align: center;
@@ -128,14 +143,11 @@
             50%{box-shadow:0 0 30px var(--text-secondary); transform:scale(1.01);}
             100%{box-shadow:0 0 10px var(--text-secondary); transform:scale(1);}
         }
-        /* 当前子任务展示区域 - 美化版 */
         .current-subtasks {
             background: var(--card-bg); backdrop-filter: blur(8px);
             border-radius: 20px; padding: 14px 18px; margin: 8px 0 12px;
-            border: 1px solid var(--border-glow);
-            display: none;
-            color: var(--text);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: 1px solid var(--border-glow); display: none;
+            color: var(--text); box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         .current-subtasks .subtasks-header {
             font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);
@@ -148,15 +160,9 @@
             transition: background 0.2s;
         }
         .current-subtasks .subtask-row:hover { background: rgba(255,255,255,0.06); }
-        .current-subtasks .subtask-check {
-            font-size: 1rem; min-width: 20px; text-align: center;
-        }
-        .current-subtasks .subtask-text {
-            flex: 1; font-size: 0.8rem; line-height: 1.4;
-        }
-        .current-subtasks .subtask-text.done {
-            text-decoration: line-through; opacity: 0.6;
-        }
+        .current-subtasks .subtask-check { font-size: 1rem; min-width: 20px; text-align: center; }
+        .current-subtasks .subtask-text { flex: 1; font-size: 0.8rem; line-height: 1.4; }
+        .current-subtasks .subtask-text.done { text-decoration: line-through; opacity: 0.6; }
         .info-bar {
             display: flex; justify-content: space-between; align-items: center;
             flex-wrap: wrap; gap: 10px; margin: 8px 0;
@@ -242,30 +248,41 @@
 <div class="container">
     <div class="header">
         <h1>⚡ 强韧计划</h1>
-        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+        <div class="hamburger-menu" id="menuToggle">
+            <span>☰</span> <span>菜单</span>
+        </div>
+    </div>
+
+    <div class="collapsible-panel" id="collapsiblePanel">
+        <div class="tools-grid">
+            <div class="theme-group">
+                <button class="theme-btn" data-theme="dark">🌙</button>
+                <button class="theme-btn" data-theme="aurora">🌿</button>
+                <button class="theme-btn" data-theme="sunset">🌅</button>
+                <button class="theme-btn" data-theme="light-gray">◻️</button>
+                <button class="theme-btn" data-theme="sakura">🌸</button>
+                <button class="theme-btn" data-theme="ink">🖋️</button>
+                <button class="theme-btn" data-theme="mint">🍃</button>
+            </div>
+            <button id="granularityBtn" class="time-granularity-btn">⏱️ 半小时</button>
+            <button id="newWeekBtn">📅 新周</button>
+            <button id="tasksPageBtn">📋 待办</button>
+            <button id="exportBtn">📎 导出</button>
+            <button id="importBtn">📂 导入</button>
+            <button id="reminderToggleBtn">🔔 提醒</button>
+            <button id="syncBtn">🔄 同步</button>
+            <button id="mergeModeBtn">🔲 合并模式</button>
+            <button id="applyMergeBtn" disabled>✅ 应用合并</button>
+            <button id="cancelMergeBtn" disabled>↩️ 取消</button>
+            <span style="font-size:0.7rem;" id="mergeHint"></span>
             <div class="conn-status" id="connStatus" title="点击手动连接云端">
                 <span class="conn-dot checking" id="connDot"></span>
                 <span id="connLabel">检测中…</span>
             </div>
-            <button id="granularityBtn" class="time-granularity-btn" title="切换半小时/每小时">⏱️ 半小时</button>
-            <button class="theme-btn" data-theme="dark">🌙</button>
-            <button class="theme-btn" data-theme="aurora">🌿</button>
-            <button class="theme-btn" data-theme="sunset">🌅</button>
-            <button class="theme-btn" data-theme="light-gray">◻️</button>
-            <button class="theme-btn" data-theme="sakura">🌸</button>
-            <button class="theme-btn" data-theme="ink">🖋️</button>
-            <button class="theme-btn" data-theme="mint">🍃</button>
-            <button id="newWeekBtn">📅 新周</button>
-            <button id="tasksPageBtn">📋 待办</button>
-            <button id="exportBtn">📎 导出</button>
-            <button id="reminderToggleBtn">🔔 提醒</button>
-            <button id="syncBtn">🔄 同步</button>
         </div>
     </div>
 
-    <!-- 当前任务横幅 -->
     <div id="currentTaskBanner" class="current-task-banner">✨ 加载中…</div>
-    <!-- 当前子任务展示区 (美化) -->
     <div id="currentSubtasks" class="current-subtasks">
         <div class="subtasks-header">📋 当前待办</div>
         <div id="currentSubtasksList"></div>
@@ -274,13 +291,6 @@
     <div class="info-bar">
         <span id="weekDisplay">--</span>
         <span style="font-size:0.7rem;">单击单元格编辑任务 ✦ 合并模式可框选合并</span>
-    </div>
-
-    <div class="toolbar">
-        <button id="mergeModeBtn">🔲 合并模式</button>
-        <button id="applyMergeBtn" disabled>✅ 应用合并</button>
-        <button id="cancelMergeBtn" disabled>↩️ 取消</button>
-        <span style="font-size:0.7rem; margin-left:auto;" id="mergeHint"></span>
     </div>
 
     <div class="table-wrapper" id="tableWrapper">
@@ -293,7 +303,6 @@
     <div class="footer">数据自动保存到云端与本地 · 提醒需授权通知</div>
 </div>
 
-<!-- 子任务弹窗（含主任务编辑） -->
 <div id="subtaskModal" class="modal">
     <div class="modal-card">
         <div class="modal-header">
@@ -308,14 +317,13 @@
             <input type="text" id="newSubtaskInput" placeholder="添加子任务...">
             <button id="addSubtaskBtn">➕</button>
         </div>
-        <div style="display:flex; gap:10px; margin-top:12px;">
+        <div style="display: flex; gap: 10px; margin-top: 12px;">
             <button id="saveSubtaskClose" style="flex:1;">保存并关闭</button>
             <button id="unmergeCellBtn" style="flex:1; display:none;">🔓 取消合并</button>
         </div>
     </div>
 </div>
 
-<!-- 待办汇总页 -->
 <div id="tasksPageModal" class="modal">
     <div class="modal-card" style="max-width:700px;">
         <div style="display:flex; justify-content:space-between;">
@@ -348,13 +356,19 @@
   let audioCtx = null;
   let currentSubtaskContext = null;
   let useHalfHour = true;
+  let lastRemindedSlot = null; // 记录上次提醒的时段，避免重复
+
+  // 注册 Service Worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('service-worker.js');
+  }
 
   function initSupabase() {
     try { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); return true; } catch { return false; }
   }
   async function testCloudConnection() {
     if (!supabase) return false;
-    try { const { error } = await supabase.from('plan_data').select('id', { count:'exact', head:true }).limit(1); return !error; }
+    try { const { error } = await supabase.from('plan_data').select('id',{count:'exact',head:true}).limit(1); return !error; }
     catch { return false; }
   }
   function updateConnectionStatus(status, text) {
@@ -362,49 +376,47 @@
     document.getElementById('connLabel').textContent = text;
   }
   async function syncWithCloud() {
-    updateConnectionStatus('checking', '检测中…');
+    updateConnectionStatus('checking','检测中…');
     cloudReady = await testCloudConnection();
     if (cloudReady) {
-      updateConnectionStatus('online', '云端在线');
+      updateConnectionStatus('online','云端在线');
       await loadCloudData();
-      saveLocal(currentWeekKey, { cache: localCache, table: tableData });
+      saveLocal(currentWeekKey, {cache:localCache, table:tableData});
       renderTable();
     } else {
-      updateConnectionStatus('offline', '连接失败');
+      updateConnectionStatus('offline','连接失败');
     }
   }
 
   function genTimeSlots() {
     let slots = [];
     if (useHalfHour) {
-      for (let h = 5; h < 24; h++) {
+      for (let h=5; h<24; h++) {
         slots.push(`${h.toString().padStart(2,'0')}:00 – ${h.toString().padStart(2,'0')}:30`);
-        if (h < 23) slots.push(`${h.toString().padStart(2,'0')}:30 – ${(h+1).toString().padStart(2,'0')}:00`);
+        if (h<23) slots.push(`${h.toString().padStart(2,'0')}:30 – ${(h+1).toString().padStart(2,'0')}:00`);
         else slots.push(`23:30 – 24:00`);
       }
     } else {
-      for (let h = 5; h < 24; h++) {
-        slots.push(`${h.toString().padStart(2,'0')}:00 – ${(h+1).toString().padStart(2,'0')}:00`);
-      }
+      for (let h=5; h<24; h++) slots.push(`${h.toString().padStart(2,'0')}:00 – ${(h+1).toString().padStart(2,'0')}:00`);
       slots.push(`23:00 – 24:00`);
     }
     return slots;
   }
   function defaultTask(hour) {
-    if (hour >= 5 && hour < 8) return '晨间日语';
-    if (hour >= 8 && hour < 12) return '工作/教学';
-    if (hour >= 12 && hour < 14) return '午餐休息';
-    if (hour >= 14 && hour < 18) return '下午备课';
-    if (hour >= 18 && hour < 22) return '晚间学习';
+    if (hour>=5 && hour<8) return '晨间日语';
+    if (hour>=8 && hour<12) return '工作/教学';
+    if (hour>=12 && hour<14) return '午餐休息';
+    if (hour>=14 && hour<18) return '下午备课';
+    if (hour>=18 && hour<22) return '晚间学习';
     return '放松/睡眠';
   }
   function resetTableData() {
     timeSlots = genTimeSlots();
-    tableData = [['时间', '周一', '周二', '周三', '周四', '周五', '周六', '周日']];
+    tableData = [['时间','周一','周二','周三','周四','周五','周六','周日']];
     for (let t of timeSlots) {
       let hour = parseInt(t.split(':')[0]);
       let row = [t];
-      for (let i = 0; i < 7; i++) row.push(defaultTask(hour));
+      for (let i=0;i<7;i++) row.push(defaultTask(hour));
       tableData.push(row);
     }
   }
@@ -412,38 +424,38 @@
 
   function getWeekKey(d) {
     let date = new Date(d); date.setHours(0,0,0,0);
-    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+    date.setDate(date.getDate()+3-(date.getDay()+6)%7);
     let year = date.getFullYear();
-    let week = Math.floor(((date - new Date(year,0,4)) / 86400000 + (new Date(year,0,4).getDay() + 6) % 7) / 7);
+    let week = Math.floor(((date - new Date(year,0,4))/86400000 + (new Date(year,0,4).getDay()+6)%7)/7);
     return `${year}-W${week.toString().padStart(2,'0')}`;
   }
   function getWeekDates(wk) {
     let [year, w] = wk.split('-W');
-    let jan4 = new Date(parseInt(year), 0, 4);
+    let jan4 = new Date(parseInt(year),0,4);
     let jan4Day = jan4.getDay();
-    let monOffset = jan4Day === 0 ? -6 : 1 - jan4Day;
+    let monOffset = jan4Day===0 ? -6 : 1-jan4Day;
     let firstMon = new Date(jan4);
-    firstMon.setDate(jan4.getDate() + monOffset + (parseInt(w) - 1) * 7);
+    firstMon.setDate(jan4.getDate()+monOffset+(parseInt(w)-1)*7);
     let dates = [];
-    for (let i = 0; i < 7; i++) {
-      let d = new Date(firstMon); d.setDate(firstMon.getDate() + i);
-      dates.push(d.toISOString().slice(0, 10));
+    for (let i=0;i<7;i++) {
+      let d = new Date(firstMon); d.setDate(firstMon.getDate()+i);
+      dates.push(d.toISOString().slice(0,10));
     }
     return dates;
   }
 
-  function loadLocal(week) { try { return JSON.parse(localStorage.getItem(LS_PREFIX + week) || 'null'); } catch { return null; } }
-  function saveLocal(week, data) { try { localStorage.setItem(LS_PREFIX + week, JSON.stringify(data)); } catch {} }
-  function loadMerged() { try { mergedGroups = JSON.parse(localStorage.getItem(LS_PREFIX + 'merged_' + USER_ID) || '{}'); } catch { mergedGroups = {}; } }
-  function saveMerged() { try { localStorage.setItem(LS_PREFIX + 'merged_' + USER_ID, JSON.stringify(mergedGroups)); } catch {} }
+  function loadLocal(week) { try { return JSON.parse(localStorage.getItem(LS_PREFIX+week)||'null'); } catch { return null; } }
+  function saveLocal(week, data) { try { localStorage.setItem(LS_PREFIX+week, JSON.stringify(data)); } catch {} }
+  function loadMerged() { try { mergedGroups = JSON.parse(localStorage.getItem(LS_PREFIX+'merged_'+USER_ID)||'{}'); } catch { mergedGroups={}; } }
+  function saveMerged() { try { localStorage.setItem(LS_PREFIX+'merged_'+USER_ID, JSON.stringify(mergedGroups)); } catch {} }
 
   async function loadCloudData() {
     if (!cloudReady) return;
     const { data, error } = await supabase.from('plan_data').select('date,cell_key,edited_text,subtasks')
-      .eq('user_id', USER_ID).eq('week_key', currentWeekKey);
+      .eq('user_id',USER_ID).eq('week_key',currentWeekKey);
     if (error) return;
     for (let item of data) {
-      let [row, col] = item.cell_key.split('_').map(Number);
+      let [row,col] = item.cell_key.split('_').map(Number);
       let key = `${item.date}_${row}_${col}`;
       localCache[key] = { text: item.edited_text || tableData[row+1]?.[col] || '', subtasks: item.subtasks || [] };
       if (item.edited_text && tableData[row+1]) tableData[row+1][col] = item.edited_text;
@@ -462,7 +474,7 @@
     const tbody = document.getElementById('tableBody');
     thead.innerHTML = ''; tbody.innerHTML = '';
     let trH = document.createElement('tr');
-    tableData[0].forEach(h => { let th = document.createElement('th'); th.textContent = h; trH.appendChild(th); });
+    tableData[0].forEach(h => { let th=document.createElement('th'); th.textContent=h; trH.appendChild(th); });
     thead.appendChild(trH);
 
     let mergeMap = {};
@@ -471,19 +483,19 @@
     }
 
     let skipCells = new Set();
-    for (let r = 1; r < tableData.length; r++) {
+    for (let r=1; r<tableData.length; r++) {
       let tr = document.createElement('tr');
-      for (let c = 0; c < tableData[r].length; c++) {
+      for (let c=0; c<tableData[r].length; c++) {
         if (skipCells.has(`${r}_${c}`)) continue;
-        let cellKey = c === 0 ? null : `${currentDates[c-1]}_${r-1}_${c}`;
+        let cellKey = c===0 ? null : `${currentDates[c-1]}_${r-1}_${c}`;
         let gid = cellKey ? mergeMap[cellKey] : null;
         let group = gid ? mergedGroups[gid] : null;
         let isMaster = group && group.masterKey === cellKey;
-        let cell = c === 0 ? document.createElement('th') : document.createElement('td');
+        let cell = c===0 ? document.createElement('th') : document.createElement('td');
         let text = tableData[r][c] || '';
         cell.setAttribute('data-row', r-1);
         cell.setAttribute('data-col', c);
-        if (c > 0) {
+        if (c>0) {
           cell.setAttribute('data-date', currentDates[c-1]);
           cell.setAttribute('data-cellkey', cellKey);
         }
@@ -492,14 +504,14 @@
           cell.setAttribute('colspan', group.colspan);
           cell.setAttribute('data-merge-gid', gid);
           cell.classList.add('merge-master');
-          for (let dr = 0; dr < group.rowspan; dr++)
-            for (let dc = 0; dc < group.colspan; dc++)
-              if (dr !== 0 || dc !== 0) skipCells.add(`${r+dr}_${c+dc}`);
+          for (let dr=0; dr<group.rowspan; dr++)
+            for (let dc=0; dc<group.colspan; dc++)
+              if (dr!==0 || dc!==0) skipCells.add(`${r+dr}_${c+dc}`);
         }
         let subtaskInfo = '';
         if (cellKey && localCache[cellKey]?.subtasks?.length > 0) {
           let subs = localCache[cellKey].subtasks;
-          let done = subs.filter(s => s.done).length;
+          let done = subs.filter(s=>s.done).length;
           subtaskInfo = `<span class="subtask-count">${done}/${subs.length}</span>`;
         }
         cell.innerHTML = `<div class="cell-content"><span>${escapeHtml(text)}</span>${subtaskInfo}</div>`;
@@ -516,16 +528,15 @@
   function highlightNow() {
     document.querySelectorAll('#mainTable td.now-highlight').forEach(td => td.classList.remove('now-highlight'));
     let now = new Date();
-    let targetCol = now.getDay() === 0 ? 7 : now.getDay();
-    let curMin = now.getHours() * 60 + now.getMinutes();
-    let currentTaskText = '';
-    let foundCellKey = null;
-    for (let r = 0; r < timeSlots.length; r++) {
+    let targetCol = now.getDay()===0 ? 7 : now.getDay();
+    let curMin = now.getHours()*60+now.getMinutes();
+    let currentTaskText = '', foundCellKey = null;
+    for (let r=0; r<timeSlots.length; r++) {
       let m = timeSlots[r].match(/(\d+):(\d+)\s*[-–—]\s*(\d+):(\d+)/);
       if (!m) continue;
-      let start = parseInt(m[1]) * 60 + parseInt(m[2]);
-      let end = parseInt(m[3]) * 60 + parseInt(m[4]);
-      if (curMin >= start && curMin < end) {
+      let start = parseInt(m[1])*60+parseInt(m[2]);
+      let end = parseInt(m[3])*60+parseInt(m[4]);
+      if (curMin>=start && curMin<end) {
         let date = currentDates[targetCol-1];
         if (!date) break;
         let cellKey = `${date}_${r}_${targetCol}`;
@@ -552,7 +563,7 @@
   function updateCurrentSubtasks(cellKey) {
     const container = document.getElementById('currentSubtasks');
     const listDiv = document.getElementById('currentSubtasksList');
-    if (!cellKey || !localCache[cellKey] || !localCache[cellKey].subtasks || localCache[cellKey].subtasks.length === 0) {
+    if (!cellKey || !localCache[cellKey]?.subtasks?.length) {
       container.style.display = 'none';
       listDiv.innerHTML = '';
       return;
@@ -563,10 +574,7 @@
     subtasks.forEach(st => {
       const icon = st.done ? '✅' : '⬜';
       const textClass = st.done ? 'done' : '';
-      html += `<div class="subtask-row">
-        <span class="subtask-check">${icon}</span>
-        <span class="subtask-text ${textClass}">${escapeHtml(st.text)}</span>
-      </div>`;
+      html += `<div class="subtask-row"><span class="subtask-check">${icon}</span><span class="subtask-text ${textClass}">${escapeHtml(st.text)}</span></div>`;
     });
     listDiv.innerHTML = html;
   }
@@ -579,7 +587,7 @@
   function handleCellClick(cell, e) {
     if (mergeMode) { toggleMergeSelection(cell); return; }
     let row = parseInt(cell.dataset.row), col = parseInt(cell.dataset.col);
-    if (col === 0 || isNaN(row)) return;
+    if (col===0 || isNaN(row)) return;
     openSubtaskModal(cell.dataset.date, row, col, cell.dataset.cellkey);
   }
 
@@ -587,26 +595,26 @@
     let ck = cell.dataset.cellkey;
     if (!ck) return;
     let idx = mergeSelection.indexOf(ck);
-    if (idx >= 0) { mergeSelection.splice(idx,1); cell.classList.remove('selected-cell'); }
+    if (idx>=0) { mergeSelection.splice(idx,1); cell.classList.remove('selected-cell'); }
     else { mergeSelection.push(ck); cell.classList.add('selected-cell'); }
     document.getElementById('applyMergeBtn').disabled = mergeSelection.length < 2;
     document.getElementById('mergeHint').textContent = mergeSelection.length ? `已选${mergeSelection.length}个` : '';
   }
   function applyMerge() {
-    if (mergeSelection.length < 2) return;
+    if (mergeSelection.length<2) return;
     let cells = mergeSelection.map(ck => {
       let [date, rc] = ck.split(/_(.+)/);
-      let [r, c] = rc.split('_').map(Number);
-      return { date, row:r, col:c, key:ck };
+      let [r,c] = rc.split('_').map(Number);
+      return {date, row:r, col:c, key:ck};
     });
-    let minRow = Math.min(...cells.map(c => c.row)), minCol = Math.min(...cells.map(c => c.col));
-    let maxRow = Math.max(...cells.map(c => c.row)), maxCol = Math.max(...cells.map(c => c.col));
-    let master = cells.find(c => c.row === minRow && c.col === minCol);
+    let minRow = Math.min(...cells.map(c=>c.row)), minCol = Math.min(...cells.map(c=>c.col));
+    let maxRow = Math.max(...cells.map(c=>c.row)), maxCol = Math.max(...cells.map(c=>c.col));
+    let master = cells.find(c=>c.row===minRow && c.col===minCol);
     mergedGroups[Date.now().toString()] = {
       masterKey: master.key,
-      cells: cells.map(c => c.key),
-      rowspan: maxRow - minRow + 1,
-      colspan: maxCol - minCol + 1
+      cells: cells.map(c=>c.key),
+      rowspan: maxRow-minRow+1,
+      colspan: maxCol-minCol+1
     };
     saveMerged();
     exitMergeMode();
@@ -614,7 +622,7 @@
   }
   function exitMergeMode() {
     mergeMode = false; mergeSelection = [];
-    document.querySelectorAll('.selected-cell').forEach(c => c.classList.remove('selected-cell'));
+    document.querySelectorAll('.selected-cell').forEach(c=>c.classList.remove('selected-cell'));
     document.getElementById('mergeModeBtn').textContent = '🔲 合并模式';
     document.getElementById('applyMergeBtn').disabled = true;
     document.getElementById('cancelMergeBtn').disabled = true;
@@ -627,14 +635,14 @@
     document.getElementById('mainTaskInput').value = data.text || '';
     let listDiv = document.getElementById('subtaskList');
     listDiv.innerHTML = '';
-    (data.subtasks || []).forEach(st => {
+    (data.subtasks||[]).forEach(st => {
       let div = document.createElement('div'); div.className = 'subtask-item';
-      let cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = st.done || false;
-      cb.onchange = () => { st.done = cb.checked; };
-      let inp = document.createElement('input'); inp.type = 'text'; inp.value = st.text;
-      inp.oninput = () => { st.text = inp.value; };
-      let del = document.createElement('button'); del.textContent = '🗑'; del.style.background = 'none'; del.style.border = 'none';
-      del.onclick = () => div.remove();
+      let cb = document.createElement('input'); cb.type='checkbox'; cb.checked = st.done||false;
+      cb.onchange = ()=> { st.done = cb.checked; };
+      let inp = document.createElement('input'); inp.type='text'; inp.value = st.text;
+      inp.oninput = ()=> { st.text = inp.value; };
+      let del = document.createElement('button'); del.textContent='🗑'; del.style.background='none'; del.style.border='none';
+      del.onclick = ()=> div.remove();
       div.appendChild(cb); div.appendChild(inp); div.appendChild(del);
       listDiv.appendChild(div);
     });
@@ -673,7 +681,7 @@
     renderTable();
   }
 
-  function renderTasksPage(filter = 'unfinished') {
+  function renderTasksPage(filter='unfinished') {
     let content = document.getElementById('tasksPageContent');
     content.innerHTML = '';
     let allTasks = [];
@@ -685,9 +693,9 @@
         allTasks.push({ date, time: timeSlots[row], task: st.text, done: st.done, cellKey: key });
       });
     }
-    if (filter === 'unfinished') allTasks = allTasks.filter(t => !t.done);
-    else if (filter === 'finished') allTasks = allTasks.filter(t => t.done);
-    allTasks.sort((a,b) => b.date.localeCompare(a.date) || a.time.localeCompare(b.time));
+    if (filter==='unfinished') allTasks = allTasks.filter(t=>!t.done);
+    else if (filter==='finished') allTasks = allTasks.filter(t=>t.done);
+    allTasks.sort((a,b)=> b.date.localeCompare(a.date) || a.time.localeCompare(b.time));
     if (!allTasks.length) { content.innerHTML = '<p style="padding:20px;">暂无数据</p>'; return; }
     allTasks.forEach(t => {
       let div = document.createElement('div'); div.className = 'subtask-item';
@@ -697,7 +705,7 @@
         let ck = e.target.dataset.key, taskText = e.target.dataset.text;
         let data = localCache[ck];
         if (data?.subtasks) {
-          let st = data.subtasks.find(s => s.text === taskText);
+          let st = data.subtasks.find(s=>s.text===taskText);
           if (st) { st.done = e.target.checked; }
           let [date, rc] = ck.split(/_(.+)/);
           let [row, col] = rc.split('_').map(Number);
@@ -711,19 +719,40 @@
     });
   }
 
+  function getSlotIdentifier(date, row, col) {
+    return `${currentWeekKey}_${row}_${col}`;
+  }
+
   function playBeep() {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    let osc = audioCtx.createOscillator();
-    let gain = audioCtx.createGain();
-    osc.type = 'sine'; osc.frequency.value = 800;
-    gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime+0.5);
-    osc.connect(gain); gain.connect(audioCtx.destination);
-    osc.start(); osc.stop(audioCtx.currentTime+0.5);
+    if (!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    const now = audioCtx.currentTime;
+    const notes = [
+      { freq: 523.25, time: 0 },
+      { freq: 659.25, time: 0.2 },
+      { freq: 783.99, time: 0.4 },
+      { freq: 1046.5, time: 0.7 }
+    ];
+    notes.forEach(note => {
+      let osc = audioCtx.createOscillator();
+      let gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = note.freq;
+      gain.gain.setValueAtTime(0.4, now + note.time);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + note.time + 0.5);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now + note.time);
+      osc.stop(now + note.time + 0.5);
+    });
   }
+
   function notifyTask(title, body) {
-    if (Notification.permission === 'granted') { new Notification(title, { body }); playBeep(); }
+    if (Notification.permission === 'granted') {
+      new Notification(title, { body });
+      playBeep();
+    }
   }
+
   function checkReminders() {
     if (!reminderEnabled) return;
     let now = new Date();
@@ -734,30 +763,49 @@
       if (!m) continue;
       let start = parseInt(m[1])*60+parseInt(m[2]);
       let end = parseInt(m[3])*60+parseInt(m[4]);
-      if (curMin >= start && curMin < end) {
+      if (curMin>=start && curMin<end) {
         let date = currentDates[targetCol-1];
-        if (!date) continue;
+        if (!date) break;
         let cellKey = `${date}_${r}_${targetCol}`;
+        let slotId = getSlotIdentifier(date, r, targetCol);
+        if (lastRemindedSlot === slotId) break;
+
         let taskText = tableData[r+1]?.[targetCol] || '';
-        if (localCache[cellKey]?.subtasks?.some(s=>!s.done)) notifyTask('⏰ 待办提醒', `${timeSlots[r]} — ${taskText}`);
-        else notifyTask('⏰ 计划提醒', `${timeSlots[r]} — ${taskText}`);
+        let hasUnfinished = localCache[cellKey]?.subtasks?.some(s => !s.done);
+        if (hasUnfinished) {
+          notifyTask('⏰ 待办提醒', `${timeSlots[r]} — ${taskText}`);
+        } else {
+          notifyTask('⏰ 计划提醒', `${timeSlots[r]} — ${taskText}`);
+        }
+        lastRemindedSlot = slotId;
         break;
       }
     }
   }
+
   function toggleReminder() {
     if (!reminderEnabled) {
       if (Notification.permission === 'default') {
         Notification.requestPermission().then(perm => {
-          if (perm === 'granted') startReminder();
+          if (perm==='granted') startReminder();
           else alert('需要通知权限才能使用提醒功能');
         });
-      } else if (Notification.permission === 'granted') startReminder();
+      } else if (Notification.permission==='granted') startReminder();
       else alert('通知权限已被拒绝，请在浏览器设置中允许');
     } else stopReminder();
   }
-  function startReminder() { reminderEnabled = true; document.getElementById('reminderToggleBtn').textContent = '🔔 提醒:开'; checkReminders(); reminderInterval = setInterval(checkReminders, 60000); }
-  function stopReminder() { reminderEnabled = false; document.getElementById('reminderToggleBtn').textContent = '🔕 提醒:关'; clearInterval(reminderInterval); }
+  function startReminder() {
+    reminderEnabled = true;
+    document.getElementById('reminderToggleBtn').textContent = '🔔 提醒:开';
+    lastRemindedSlot = null; // 开启时重置记录
+    checkReminders();
+    reminderInterval = setInterval(checkReminders, 60000);
+  }
+  function stopReminder() {
+    reminderEnabled = false;
+    document.getElementById('reminderToggleBtn').textContent = '🔕 提醒:关';
+    clearInterval(reminderInterval);
+  }
 
   function toggleGranularity() {
     useHalfHour = !useHalfHour;
@@ -803,16 +851,50 @@
     let a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `plan_${currentWeekKey}.csv`; a.click();
   }
 
+  function importCSV() {
+    let input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = async (e) => {
+      let file = e.target.files[0];
+      if (!file) return;
+      let text = await file.text();
+      let lines = text.trim().split('\n');
+      if (lines.length < 2) { alert('CSV文件无效'); return; }
+      let header = lines[0].split(',').map(h => h.replace(/"/g,'').trim());
+      if (header[0]!=='时间' || header.length!==8) { alert('CSV格式不正确，需包含“时间,周一,...,周日”'); return; }
+      let newData = [header];
+      for (let i=1; i<lines.length; i++) {
+        let cols = lines[i].split(',').map(c => c.replace(/"/g,'').trim());
+        newData.push(cols);
+      }
+      if (!confirm('导入将覆盖当前表格数据，确定继续？')) return;
+      mergedGroups = {};
+      saveMerged();
+      tableData = newData;
+      localCache = {};
+      saveLocal(currentWeekKey, { cache: localCache, table: tableData });
+      renderTable();
+    };
+    input.click();
+  }
+
+  function toggleMenu() {
+    let panel = document.getElementById('collapsiblePanel');
+    panel.classList.toggle('open');
+  }
+
   window.onload = async () => {
     initSupabase();
     loadMerged();
     currentWeekKey = getWeekKey(new Date());
     currentDates = getWeekDates(currentWeekKey);
-    updateConnectionStatus('checking', '检测中…');
+    updateConnectionStatus('checking','检测中…');
     cloudReady = await testCloudConnection();
-    updateConnectionStatus(cloudReady ? 'online' : 'offline', cloudReady ? '云端在线' : '连接失败');
+    updateConnectionStatus(cloudReady?'online':'offline', cloudReady?'云端在线':'连接失败');
     await loadAll();
 
+    document.getElementById('menuToggle').addEventListener('click', toggleMenu);
     document.getElementById('syncBtn').addEventListener('click', syncWithCloud);
     document.getElementById('connStatus').addEventListener('click', syncWithCloud);
     document.getElementById('newWeekBtn').addEventListener('click', newWeek);
@@ -825,6 +907,7 @@
     document.getElementById('filterFinished').addEventListener('click', ()=>renderTasksPage('finished'));
     document.getElementById('filterAll').addEventListener('click', ()=>renderTasksPage('all'));
     document.getElementById('exportBtn').addEventListener('click', exportCSV);
+    document.getElementById('importBtn').addEventListener('click', importCSV);
     document.getElementById('reminderToggleBtn').addEventListener('click', toggleReminder);
     document.getElementById('scrollLeft').addEventListener('click', ()=> document.getElementById('tableWrapper').scrollLeft-=150);
     document.getElementById('scrollRight').addEventListener('click', ()=> document.getElementById('tableWrapper').scrollLeft+=150);
@@ -832,15 +915,13 @@
       b.addEventListener('click', ()=> document.body.className = 'theme-'+b.dataset.theme);
     });
     document.getElementById('granularityBtn').addEventListener('click', toggleGranularity);
-
     document.getElementById('mergeModeBtn').addEventListener('click', ()=>{
       mergeMode = !mergeMode;
-      if(mergeMode) { document.getElementById('mergeModeBtn').textContent = '🔲 退出合并'; document.getElementById('cancelMergeBtn').disabled = false; }
+      if(mergeMode) { document.getElementById('mergeModeBtn').textContent='🔲 退出合并'; document.getElementById('cancelMergeBtn').disabled=false; }
       else exitMergeMode();
     });
     document.getElementById('applyMergeBtn').addEventListener('click', applyMerge);
     document.getElementById('cancelMergeBtn').addEventListener('click', exitMergeMode);
-
     document.getElementById('addSubtaskBtn').addEventListener('click', ()=>{
       let inp = document.getElementById('newSubtaskInput');
       let text = inp.value.trim(); if(!text) return;
