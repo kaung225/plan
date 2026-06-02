@@ -1245,19 +1245,78 @@
             return null;
         }
         function highlightNow() {
-            document.querySelectorAll('#mainTable td.now-highlight').forEach(td => td.classList.remove('now-highlight'));
-            let slot = getCurrentSlot(); const banner = document.getElementById('currentTaskBanner'); const miniSub = document.getElementById('currentSubtasksMini');
-            if (!slot) { if (banner) banner.textContent = '✨ 暂无当前计划'; if (miniSub) miniSub.innerHTML = '<span style="opacity:0.5;">暂无可显示的子任务</span>'; return; }
-            let { row, col } = slot; let date = currentDates[col - 1];
-            if (!date) { if (banner) banner.textContent = '✨ 暂无计划'; if (miniSub) miniSub.innerHTML = '<span style="opacity:0.5;">暂无可显示的子任务</span>'; return; }
-            let cellKey = `${date}_${row}_${col}`; let gid = null;
-            for (let [g, group] of Object.entries(mergedGroups)) { if (group.cells.includes(cellKey)) { gid = g; break; } }
-            let taskText = '';
-            if (gid) { let group = mergedGroups[gid]; let [mdate, mrc] = group.masterKey.split(/_(.+)/); let [mr, mc] = mrc.split('_').map(Number); taskText = tableData[mr + 1]?.[mc] || ''; let masterCell = document.querySelector(`td[data-merge-gid="${gid}"]`); if (masterCell) masterCell.classList.add('now-highlight'); }
-            else { taskText = tableData[row + 1]?.[col] || ''; let cell = document.querySelector(`td[data-cellkey="${cellKey}"]`); if (cell) cell.classList.add('now-highlight'); }
-            if (banner) banner.textContent = '✨ ' + (taskText || '暂无计划');
-            if (miniSub) { let data = localCache[cellKey]; let subtasks = data?.subtasks || []; if (subtasks.length > 0) { miniSub.innerHTML = subtasks.map(s => `<span class="mini-sub${s.done?' done':''}">${s.done?'✅':'⬜'} ${escapeHtml(s.text)}</span>`).join(''); } else { miniSub.innerHTML = '<span style="opacity:0.5;">当前时间段暂无子任务</span>'; } }
+    document.querySelectorAll('#mainTable td.now-highlight').forEach(td => td.classList.remove('now-highlight'));
+    let slot = getCurrentSlot();
+    const banner = document.getElementById('currentTaskBanner');
+    const miniSub = document.getElementById('currentSubtasksMini');
+    if (!slot) {
+        if (banner) banner.textContent = '✨ 暂无当前计划';
+        if (miniSub) miniSub.innerHTML = '<span style="opacity:0.5;">暂无可显示的子任务</span>';
+        return;
+    }
+    let { row, col } = slot;
+    let date = currentDates[col - 1];
+    if (!date) {
+        if (banner) banner.textContent = '✨ 暂无计划';
+        if (miniSub) miniSub.innerHTML = '<span style="opacity:0.5;">暂无可显示的子任务</span>';
+        return;
+    }
+    let cellKey = `${date}_${row}_${col}`;
+    let gid = null;
+    for (let [g, group] of Object.entries(mergedGroups)) {
+        if (group.cells.includes(cellKey)) { gid = g; break; }
+    }
+    let taskText = '';
+    let allSubtasks = [];
+    
+    if (gid) {
+        // 合并表格：收集所有被合并单元格的子任务
+        let group = mergedGroups[gid];
+        let [mdate, mrc] = group.masterKey.split(/_(.+)/);
+        let [mr, mc] = mrc.split('_').map(Number);
+        taskText = tableData[mr + 1]?.[mc] || '';
+        let masterCell = document.querySelector(`td[data-merge-gid="${gid}"]`);
+        if (masterCell) masterCell.classList.add('now-highlight');
+        
+        // 收集合并组中所有单元格的子任务
+        for (let ck of group.cells) {
+            let data = localCache[ck];
+            if (data?.subtasks) {
+                allSubtasks = allSubtasks.concat(data.subtasks);
+            }
         }
+    } else {
+        taskText = tableData[row + 1]?.[col] || '';
+        let cell = document.querySelector(`td[data-cellkey="${cellKey}"]`);
+        if (cell) cell.classList.add('now-highlight');
+        
+        let data = localCache[cellKey];
+        if (data?.subtasks) {
+            allSubtasks = data.subtasks;
+        }
+    }
+    
+    if (banner) banner.textContent = '✨ ' + (taskText || '暂无计划');
+    
+    if (miniSub) {
+        // 去重子任务
+        let uniqueSubtasks = [];
+        let seen = new Set();
+        for (let s of allSubtasks) {
+            if (!seen.has(s.text)) {
+                seen.add(s.text);
+                uniqueSubtasks.push(s);
+            }
+        }
+        if (uniqueSubtasks.length > 0) {
+            miniSub.innerHTML = uniqueSubtasks.map(s =>
+                `<span class="mini-sub${s.done?' done':''}">${s.done?'✅':'⬜'} ${escapeHtml(s.text)}</span>`
+            ).join('');
+        } else {
+            miniSub.innerHTML = '<span style="opacity:0.5;">当前时间段暂无子任务</span>';
+        }
+    }
+}
         function checkReminders() {
             if (!reminderEnabled) return; let slot = getCurrentSlot(); if (!slot) return; let { row, col } = slot; let date = currentDates[col - 1]; if (!date) return;
             let cellKey = `${date}_${row}_${col}`; let slotId = `${currentWeekKey}_${row}_${col}`; if (lastRemindedSlot === slotId) return;
