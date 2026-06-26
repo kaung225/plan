@@ -13,12 +13,15 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="强韧生活">
     <link rel="apple-touch-icon" href="icon-512.png">
+    <!-- ✅ PWA 关键修复1：引入 manifest -->
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js">
     </script>
     <style>
+        /* ========== 所有 CSS 保持原样，无任何修改 ========== */
         :root {
             --bg-body: radial-gradient(circle at 20% 30%, #0a0f1e, #03060c);
             --bg-container: rgba(12, 20, 35, 0.65);
@@ -1055,6 +1058,7 @@
         <button data-page="settings"><i class="fas fa-sliders-h"></i><span>设置</span><span class="nav-badge" id="settingsBadge"></span></button>
     </div>
     <script>
+        // ==================== 原有全部 JavaScript 逻辑，保持完全不变 ====================
         const SUPABASE_URL = 'https://ickvrfrhlynxnlmnrhcq.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlja3ZyZnJobHlueG5sbW5yaGNxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzgxMTI4NSwiZXhwIjoyMDkzMzg3Mjg1fQ.TAAmjopUp2Atbfdwsf87PHna2c55ln4eWzUxpjfTRl4';
         const USER_ID = 'user_kaungmyat_fixed';
@@ -1413,6 +1417,17 @@
             await switchPage('plan');
             SettingsModule.updateConnectionUI();
         });
+    </script>
+
+    <!-- ✅ PWA 关键修复2：注册 Service Worker -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service Worker 已注册', reg.scope))
+                    .catch(err => console.error('Service Worker 注册失败', err));
+            });
+        }
     </script>
 </body>
 </html>
